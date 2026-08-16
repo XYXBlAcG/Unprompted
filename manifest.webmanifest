@@ -1,0 +1,23 @@
+{
+  "name": "Unprompted — 口语练习",
+  "short_name": "Unprompted",
+  "description": "抽取一个值得思考的话题并开口演讲——即兴演讲或深度研究练习,训练临场思维。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121816",
+  "theme_color": "#121816",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
