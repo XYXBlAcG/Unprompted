@@ -507,6 +507,26 @@ function buildSettings() {
             el("button", { type: "button", class: "btn ghost", id: "vocab-reset-btn", text: "恢复默认" })
           )
         ),
+        el("details", { class: "vocab-llm", id: "vocab-llm" },
+          el("summary", { text: "LLM 生成词汇(提示词)" }),
+          el("p", { class: "vocab-llm-hint", text: "复制提示词发给 LLM,让它生成当前领域「数据库里还没有的」新词汇;生成结果粘贴到上方「批量导入」即可。" }),
+          el("div", { class: "vocab-llm-opts" },
+            el("label", { class: "vocab-llm-opts-label", for: "vocab-llm-count", text: "数量" }),
+            el("input", { type: "number", id: "vocab-llm-count", class: "vocab-llm-count", min: "1", max: "50", step: "1", value: "20" }),
+            el("input", { type: "text", id: "vocab-llm-hint", class: "vocab-llm-hint-input", placeholder: "可选:侧重类型(如「关于心理学实验的术语」)", maxlength: "80" }),
+            el("button", { type: "button", class: "btn secondary", id: "vocab-llm-refresh", text: "生成提示词" })
+          ),
+          el("textarea", { id: "vocab-llm-prompt", class: "vocab-llm-prompt", rows: "10", readonly: true }),
+          el("div", { class: "vocab-llm-actions" },
+            el("button", { type: "button", class: "btn primary", id: "vocab-llm-copy", text: "复制提示词" })
+          )
+        ),
+        el("div", { class: "vocab-backup" },
+          el("button", { type: "button", class: "btn secondary", id: "vocab-export-btn", text: "导出词汇(JSON)" }),
+          el("button", { type: "button", class: "btn secondary", id: "vocab-import-file-btn", text: "导入词汇(JSON)" }),
+          el("input", { type: "file", id: "vocab-file-input", accept: ".json,application/json", hidden: true }),
+          el("p", { class: "vocab-backup-hint", text: "词汇保存在浏览器本地(localStorage)。导出为 JSON 文件可备份、迁移或恢复。" })
+        ),
         el("button", { type: "button", class: "btn ghost vocab-back", id: "vocab-back", text: "← 返回设置" })
       )
     )
@@ -1061,6 +1081,66 @@ document.getElementById("settings-mute-input").addEventListener("change", (e) =>
 
 document.getElementById("settings-done").addEventListener("click", () => setSettingsOpen(false));
 
+/* 通用确认弹窗 */
+function confirmDialog({ title, body, confirmText = "确认", cancelText = "取消", onConfirm }) {
+  const back = document.activeElement;
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    document.removeEventListener("keydown", onKey);
+    overlay.remove();
+    back?.focus?.();
+  };
+  const confirm = () => {
+    close();
+    onConfirm?.();
+  };
+  const onKey = (e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      close();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusables = [...panel.querySelectorAll("button:not([disabled])")].filter((n) => n.tabIndex !== -1);
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+  const overlay = el("div", { class: "confirm-overlay", role: "presentation" },
+    el("div", { class: "confirm-panel", id: "confirm-panel", role: "dialog", "aria-modal": "true", "aria-labelledby": "confirm-title" },
+      el("h2", { class: "confirm-title", id: "confirm-title", text: title }),
+      el("p", { class: "confirm-body", text: body }),
+      el("div", { class: "confirm-actions" },
+        el("button", { type: "button", class: "btn secondary", onclick: close, text: cancelText }),
+        el("button", { type: "button", class: "btn primary confirm-danger", onclick: confirm, text: confirmText })
+      )
+    )
+  );
+  const panel = overlay.querySelector(".confirm-panel");
+  document.body.appendChild(overlay);
+  document.addEventListener("keydown", onKey);
+  overlay.querySelector(".btn.secondary")?.focus();
+}
+
+/* 按钮瞬时反馈 */
+function flashButton(id, text, ms = 1400) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  const old = btn.textContent;
+  btn.textContent = text;
+  clearTimeout(btn._flashTimer);
+  btn._flashTimer = setTimeout(() => { btn.textContent = old; }, ms);
+}
+
 /* 词汇管理 */
 let vocabMode = "general";
 let vocabViewOpen = false;
@@ -1099,6 +1179,7 @@ function renderVocab() {
   );
   document.getElementById("vocab-count").textContent = `${topics.length} 个词汇`;
   document.getElementById("vocab-select").value = vocabMode;
+  renderLlmPrompt();
 }
 
 function syncTopicsAfterEdit() {
@@ -1154,9 +1235,125 @@ function importWords() {
 }
 
 function restoreTopics() {
-  saveTopics(vocabMode, defaultTopics(vocabMode));
-  syncTopicsAfterEdit();
-  renderVocab();
+  const mode = MODES.find((m) => m.id === vocabMode) ?? MODES[0];
+  const current = loadTopics(vocabMode);
+  confirmDialog({
+    title: "恢复默认词汇?",
+    body: `将把「${mode.label}」领域的所有词汇恢复为内置默认词库,当前 ${current.length} 个自定义词汇将被覆盖,此操作不可撤销。`,
+    confirmText: "确认恢复",
+    onConfirm: () => {
+      saveTopics(vocabMode, defaultTopics(vocabMode));
+      syncTopicsAfterEdit();
+      renderVocab();
+      flashButton("vocab-reset-btn", "已恢复默认");
+    },
+  });
+}
+
+/* LLM 生成词汇提示词 */
+function buildLlmPrompt() {
+  const mode = MODES.find((m) => m.id === vocabMode) ?? MODES[0];
+  const existing = loadTopics(vocabMode);
+  const count = clamp(parseInt(document.getElementById("vocab-llm-count").value, 10) || 20, 1, 50);
+  const hint = document.getElementById("vocab-llm-hint").value.trim();
+  const shown = existing.slice(0, 60);
+  const rest = existing.length - shown.length;
+  const lines = [
+    `你是一名专业的词汇策划。请为下面的「${mode.label}」领域生成 ${count} 个新的中文专业术语,用于口语演讲练习。`,
+    "",
+    "要求:",
+    "1. 每个词汇必须是中文,简洁凝练(一般 2–10 字),适合作为 1–2 分钟即兴演讲的话题;",
+    "2. 必须是该领域的专业术语或值得深入讨论的概念,优先选择有深度、有辨析空间、能引发思考的词;",
+    "3. 不得与下方「已有词汇」重复——必须避开数据库里已经存在的词;",
+    hint ? `4. 侧重类型:${hint};` : "4. 尽量覆盖该领域的多个子方向,使词汇类型多样;",
+    "5. 不要编号、不要圆点、不要解释或例句,每行只输出一个词汇。",
+    "",
+    "已有词汇(请勿重复):",
+    ...shown.map((w) => `· ${w}`),
+    ...(rest > 0 ? [`· ……(其余 ${rest} 个省略)`] : []),
+    "",
+    "请直接输出词汇列表(每行一个):",
+  ];
+  return lines.join("\n");
+}
+
+function renderLlmPrompt() {
+  const ta = document.getElementById("vocab-llm-prompt");
+  if (ta) ta.value = buildLlmPrompt();
+}
+
+async function copyLlmPrompt() {
+  const ta = document.getElementById("vocab-llm-prompt");
+  const text = ta.value;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      throw new Error("no clipboard API");
+    }
+  } catch {
+    ta.focus();
+    ta.select();
+    document.execCommand("copy");
+    ta.setSelectionRange(0, 0);
+  }
+  flashButton("vocab-llm-copy", "已复制 ✓");
+}
+
+/* 词汇备份:导出 / 导入 JSON */
+function exportTopics() {
+  const data = { version: 1, exportedAt: new Date().toISOString(), topics: {} };
+  for (const m of MODES) {
+    data.topics[m.id] = loadTopics(m.id);
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  a.href = url;
+  a.download = `unprompted-词汇备份-${date}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  flashButton("vocab-export-btn", "已导出 ✓");
+}
+
+function importTopicsFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data || typeof data.topics !== "object") throw new Error("bad format");
+      let imported = 0;
+      let modes = 0;
+      for (const [id, list] of Object.entries(data.topics)) {
+        if (!MODES.some((m) => m.id === id) || !Array.isArray(list)) continue;
+        const clean = list.map((t) => String(t).trim()).filter(Boolean);
+        if (!clean.length) continue;
+        saveTopics(id, clean);
+        imported += clean.length;
+        modes++;
+      }
+      if (!modes) throw new Error("empty");
+      syncTopicsAfterEdit();
+      renderVocab();
+      confirmDialog({
+        title: "导入完成",
+        body: `已从文件导入 ${modes} 个领域的 ${imported} 个词汇,并覆盖本地对应词库。`,
+        confirmText: "好的",
+        onConfirm: () => {},
+      });
+    } catch {
+      confirmDialog({
+        title: "导入失败",
+        body: "无法解析该文件。请确认选择的是本应用导出的 JSON 备份文件。",
+        confirmText: "好的",
+        onConfirm: () => {},
+      });
+    }
+  };
+  reader.readAsText(file);
 }
 
 document.getElementById("settings-vocab-btn").addEventListener("click", () => setSettingsView("vocab"));
@@ -1174,10 +1371,22 @@ document.getElementById("vocab-input").addEventListener("keydown", (e) => {
 });
 document.getElementById("vocab-import-btn").addEventListener("click", importWords);
 document.getElementById("vocab-reset-btn").addEventListener("click", restoreTopics);
+document.getElementById("vocab-llm-refresh").addEventListener("click", renderLlmPrompt);
+document.getElementById("vocab-llm-copy").addEventListener("click", copyLlmPrompt);
+document.getElementById("vocab-llm-count").addEventListener("change", renderLlmPrompt);
+document.getElementById("vocab-llm-hint").addEventListener("change", renderLlmPrompt);
+document.getElementById("vocab-export-btn").addEventListener("click", exportTopics);
+document.getElementById("vocab-import-file-btn").addEventListener("click", () => document.getElementById("vocab-file-input").click());
+document.getElementById("vocab-file-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) importTopicsFile(file);
+  e.target.value = "";
+});
 
 /* 焦点陷阱 */
 document.addEventListener("keydown", (e) => {
   if (!state.settingsOpen) return;
+  if (document.querySelector(".confirm-overlay")) return; // 确认弹窗打开时,交由其处理键盘
   if (e.key === "Escape") {
     e.preventDefault();
     if (vocabViewOpen) {

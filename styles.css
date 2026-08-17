@@ -1173,6 +1173,180 @@ body {
   margin: .4rem auto 0;
 }
 
+.confirm-overlay {
+  z-index: 60;
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  background: rgba(10, 14, 13, .72);
+  place-items: center;
+  padding: 1rem;
+  animation: .25s cubic-bezier(.22, 1, .36, 1) both overlay-in;
+  display: grid;
+  position: fixed;
+  inset: 0;
+}
+
+.confirm-panel {
+  text-align: left;
+  background: #161c1a;
+  border-radius: 1.1rem;
+  width: min(380px, 100%);
+  padding: 1.3rem 1.35rem 1.15rem;
+  animation: .3s cubic-bezier(.22, 1, .36, 1) both rise;
+  box-shadow: inset 0 0 0 1px #f4e8d61f, 0 24px 60px #0000008c;
+}
+
+.confirm-title {
+  font-family: var(--font-display);
+  letter-spacing: -.02em;
+  color: var(--ink);
+  margin: 0 0 .4rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.confirm-body {
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: .88rem;
+  line-height: 1.6;
+  margin: 0 0 1.1rem;
+}
+
+.confirm-actions {
+  justify-content: flex-end;
+  gap: .6rem;
+  display: flex;
+}
+
+.confirm-danger {
+  background: #c4453c !important;
+  box-shadow: 0 10px 28px #c4453c47 !important;
+}
+
+.confirm-danger:not(:disabled):hover {
+  background: #d9564d !important;
+}
+
+.vocab-llm {
+  margin-bottom: .6rem;
+}
+
+.vocab-llm summary {
+  cursor: pointer;
+  color: var(--accent-bright);
+  font-family: var(--font-body);
+  font-size: .85rem;
+  font-weight: 600;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.vocab-llm summary:hover {
+  text-decoration: underline;
+}
+
+.vocab-llm-hint {
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: .75rem;
+  line-height: 1.5;
+  margin: .45rem 0;
+}
+
+.vocab-llm-opts {
+  align-items: center;
+  gap: .45rem;
+  margin-bottom: .55rem;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.vocab-llm-opts-label {
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: .78rem;
+}
+
+.vocab-llm-count {
+  width: 4rem;
+  background: #f4e8d60d;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: .9rem;
+  border: 1px solid #f4e8d62e;
+  border-radius: .6rem;
+  padding: .45rem .6rem;
+}
+
+.vocab-llm-count:focus-visible,
+.vocab-llm-hint-input:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.vocab-llm-hint-input {
+  flex: 1;
+  min-width: 12rem;
+  background: #f4e8d60d;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: .85rem;
+  border: 1px solid #f4e8d62e;
+  border-radius: .6rem;
+  padding: .45rem .65rem;
+}
+
+.vocab-llm-hint-input::placeholder {
+  color: var(--muted);
+}
+
+.vocab-llm-prompt {
+  width: 100%;
+  background: #0f1412;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: .82rem;
+  line-height: 1.55;
+  border: 1px solid #f4e8d62e;
+  border-radius: .7rem;
+  padding: .6rem .75rem;
+  resize: vertical;
+}
+
+.vocab-llm-prompt:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.vocab-llm-actions {
+  margin-top: .55rem;
+}
+
+.vocab-llm-actions .btn {
+  padding: .55rem 1.1rem;
+}
+
+.vocab-backup {
+  gap: .5rem;
+  margin-bottom: .4rem;
+  flex-wrap: wrap;
+  display: flex;
+}
+
+.vocab-backup .btn {
+  padding: .55rem 1rem;
+}
+
+.vocab-backup-hint {
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: .72rem;
+  line-height: 1.5;
+  margin: .1rem 0 0;
+  width: 100%;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .brand, .stage, .reel.is-landed .reel-phrase, .reel.is-spinning .reel-phrase, .timer-overlay, .timer-overlay-inner, .settings-overlay, .settings-panel, .niche-menu {
     animation: none !important;
