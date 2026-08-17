@@ -1,4 +1,4 @@
-/* 研究笔记工作台:Markdown 文本 + 画板(拖拽/双击编辑/连线思维导图/矢量 PDF) */
+/* 研究笔记工作台:Markdown 文本 + 画板(框选/拖拽/双击编辑/连线思维导图/矢量 PDF) */
 const LS_TEXT = "unprompted:research:text";
 const LS_BOARD = "unprompted:research:board";
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -79,14 +79,22 @@ document.getElementById("btn-dl-text").addEventListener("click", () => {
 
 /* ---------- 画板 ---------- */
 const board = document.getElementById("board");
+const canvas = document.getElementById("board-canvas");
 const itemsEl = document.getElementById("board-items");
 const linksSvg = document.getElementById("board-links");
+const marqueeEl = document.getElementById("board-marquee");
 
 let items = [];
 let links = [];
-let selectedId = null;
+let selectedIds = new Set();
 let selectedLinkId = null;
 let uid = Math.floor(Math.random() * 1e6);
+
+/* 坐标:把视口事件坐标转换为画布坐标(考虑滚动) */
+function canvasPoint(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
 
 function saveBoard() {
   try {
@@ -105,30 +113,51 @@ function loadBoard() {
   } catch {}
 }
 
-function selectItem(id) {
-  selectedId = id;
-  selectedLinkId = null;
+/* 画布尺寸:根据最远的节点动态扩展,保证内容都能显示/滚动 */
+function updateCanvasSize() {
+  let maxX = 0;
+  let maxY = 0;
+  for (const it of items) {
+    maxX = Math.max(maxX, it.x + (it.w || 220));
+    maxY = Math.max(maxY, it.y + (it.h || 40));
+  }
+  maxX = Math.max(maxX, board.clientWidth);
+  maxY = Math.max(maxY, board.clientHeight);
+  canvas.style.width = maxX + "px";
+  canvas.style.height = maxY + "px";
+}
+
+/* 选择 */
+function applySelectionUI() {
   document.querySelectorAll(".board-item").forEach((el) => {
-    el.classList.toggle("is-selected", el.dataset.id === id);
+    el.classList.toggle("is-selected", selectedIds.has(el.dataset.id));
   });
   renderLinks();
   updateDelLinkBtn();
 }
 
-function selectLink(id) {
-  selectedLinkId = id;
-  selectedId = null;
-  document.querySelectorAll(".board-item").forEach((el) => el.classList.remove("is-selected"));
-  renderLinks();
-  updateDelLinkBtn();
+function setSelection(ids) {
+  selectedIds = new Set(ids);
+  selectedLinkId = null;
+  applySelectionUI();
+}
+
+function selectItem(id) {
+  setSelection([id]);
+  board.focus();
 }
 
 function clearSelection() {
-  selectedId = null;
+  selectedIds.clear();
   selectedLinkId = null;
-  document.querySelectorAll(".board-item").forEach((el) => el.classList.remove("is-selected"));
-  renderLinks();
-  updateDelLinkBtn();
+  applySelectionUI();
+}
+
+function selectLink(id) {
+  selectedLinkId = id;
+  selectedIds.clear();
+  applySelectionUI();
+  board.focus();
 }
 
 function updateDelLinkBtn() {
@@ -139,7 +168,17 @@ function updateDelLinkBtn() {
 function deleteItem(id) {
   items = items.filter((i) => i.id !== id);
   links = links.filter((l) => l.from !== id && l.to !== id);
-  if (selectedId === id) selectedId = null;
+  selectedIds.delete(id);
+  renderBoard();
+  saveBoard();
+}
+
+function deleteSelected() {
+  const ids = [...selectedIds];
+  if (!ids.length) return;
+  items = items.filter((i) => !ids.includes(i.id));
+  links = links.filter((l) => !ids.includes(l.from) && !ids.includes(l.to));
+  selectedIds.clear();
   renderBoard();
   saveBoard();
 }
@@ -159,27 +198,40 @@ function renderLinks() {
         const a = items.find((i) => i.id === l.from);
         const b = items.find((i) => i.id === l.to);
         if (!a || !b) return null;
-        const line = document.createElementNS(SVG_NS, "line");
-        line.setAttribute("x1", String(a.x + a.w));
-        line.setAttribute("y1", String(a.y + a.h / 2));
-        line.setAttribute("x2", String(b.x));
-        line.setAttribute("y2", String(b.y + b.h / 2));
-        line.setAttribute("stroke", "#6fc3d8");
-        line.setAttribute("stroke-width", "2");
-        if (l.id === selectedLinkId) line.classList.add("is-selected");
-        line.addEventListener("click", (e) => {
+        const selected = l.id === selectedLinkId;
+        // 透明加宽命中线(便于点击) + 可见细线
+        const hit = document.createElementNS(SVG_NS, "line");
+        hit.classList.add("board-link-hit");
+        if (selected) hit.classList.add("is-selected");
+        hit.setAttribute("x1", String(a.x + a.w));
+        hit.setAttribute("y1", String(a.y + (a.h || 40) / 2));
+        hit.setAttribute("x2", String(b.x));
+        hit.setAttribute("y2", String(b.y + (b.h || 40) / 2));
+        hit.setAttribute("stroke", "transparent");
+        hit.setAttribute("stroke-width", "14");
+        hit.addEventListener("pointerup", (e) => {
           e.stopPropagation();
           selectLink(l.id);
         });
-        return line;
+        const line = document.createElementNS(SVG_NS, "line");
+        line.classList.add("board-link-line");
+        if (selected) line.classList.add("is-selected");
+        line.setAttribute("x1", String(a.x + a.w));
+        line.setAttribute("y1", String(a.y + (a.h || 40) / 2));
+        line.setAttribute("x2", String(b.x));
+        line.setAttribute("y2", String(b.y + (b.h || 40) / 2));
+        line.setAttribute("stroke", "#6fc3d8");
+        line.setAttribute("stroke-width", "2");
+        return [hit, line];
       })
       .filter(Boolean)
+      .flat()
   );
 }
 
 function makeItemEl(it) {
   const wrap = document.createElement("div");
-  wrap.className = "board-item" + (it.id === selectedId ? " is-selected" : "");
+  wrap.className = "board-item" + (selectedIds.has(it.id) ? " is-selected" : "");
   wrap.dataset.id = it.id;
   wrap.style.left = it.x + "px";
   wrap.style.top = it.y + "px";
@@ -202,10 +254,10 @@ function makeItemEl(it) {
     wrap.appendChild(text);
     const resize = () => {
       it.text = text.textContent;
-      const h = wrap.offsetHeight || 40;
-      it.h = h;
+      it.h = wrap.offsetHeight || 40;
       saveBoard();
       renderLinks();
+      updateCanvasSize();
     };
     text.addEventListener("input", resize);
     text.addEventListener("blur", () => {
@@ -217,10 +269,9 @@ function makeItemEl(it) {
       if (e.target.classList.contains("board-del")) return;
       e.preventDefault();
       e.stopPropagation();
-      selectItem(it.id);
+      setSelection([it.id]);
       text.contentEditable = "true";
       text.focus();
-      // 光标放到末尾
       const range = document.createRange();
       range.selectNodeContents(text);
       range.collapse(false);
@@ -255,12 +306,12 @@ function makeItemEl(it) {
   del.addEventListener("dblclick", (e) => e.stopPropagation());
   wrap.appendChild(del);
 
-  // 单击选中 + 拖拽
+  // 单击选中 + 拖拽(已在选区内则整体拖动)
   wrap.addEventListener("pointerdown", (e) => {
     if (e.target.classList.contains("board-del") || e.target.classList.contains("board-link-handle")) return;
     if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
-    selectItem(it.id);
+    if (!selectedIds.has(it.id)) setSelection([it.id]);
     startDrag(it.id, e);
   });
   return wrap;
@@ -268,21 +319,26 @@ function makeItemEl(it) {
 
 function renderBoard() {
   itemsEl.replaceChildren(...items.map((it) => makeItemEl(it)));
-  // 测量文本节点实际高度
   items.forEach((it) => {
     const el = document.querySelector(`[data-id="${it.id}"]`);
     if (el) it.h = el.offsetHeight || it.h || 40;
   });
-  renderLinks();
-  updateDelLinkBtn();
+  applySelectionUI();
+  updateCanvasSize();
 }
 
-/* 拖拽移动 */
+/* 拖拽移动(支持多选整体移动) */
 let drag = null;
 function startDrag(id, e) {
-  const it = items.find((i) => i.id === id);
-  const rect = board.getBoundingClientRect();
-  drag = { id, dx: e.clientX - rect.left - it.x, dy: e.clientY - rect.top - it.y };
+  const p = canvasPoint(e);
+  const ids = [...selectedIds].filter((iid) => items.some((i) => i.id === iid));
+  if (!ids.includes(id)) ids.push(id);
+  const offsets = {};
+  for (const iid of ids) {
+    const it = items.find((i) => i.id === iid);
+    offsets[iid] = { dx: p.x - it.x, dy: p.y - it.y };
+  }
+  drag = { ids, offsets };
 }
 
 board.addEventListener("pointermove", (e) => {
@@ -292,16 +348,26 @@ board.addEventListener("pointermove", (e) => {
     moveTempLine(e);
     return;
   }
+  if (marquee) {
+    const p = canvasPoint(e);
+    marquee.x1 = p.x;
+    marquee.y1 = p.y;
+    renderMarquee();
+    return;
+  }
   if (!drag) return;
-  const rect = board.getBoundingClientRect();
-  const it = items.find((i) => i.id === drag.id);
-  if (!it) return;
-  it.x = Math.max(0, e.clientX - rect.left - drag.dx);
-  it.y = Math.max(0, e.clientY - rect.top - drag.dy);
-  const el = document.querySelector(`[data-id="${it.id}"]`);
-  if (el) {
-    el.style.left = it.x + "px";
-    el.style.top = it.y + "px";
+  const p = canvasPoint(e);
+  for (const iid of drag.ids) {
+    const it = items.find((i) => i.id === iid);
+    if (!it) continue;
+    const o = drag.offsets[iid];
+    it.x = Math.max(0, p.x - o.dx);
+    it.y = Math.max(0, p.y - o.dy);
+    const el = document.querySelector(`[data-id="${iid}"]`);
+    if (el) {
+      el.style.left = it.x + "px";
+      el.style.top = it.y + "px";
+    }
   }
   renderLinks();
 });
@@ -310,8 +376,56 @@ board.addEventListener("pointerup", () => {
   if (drag) {
     drag = null;
     saveBoard();
+    updateCanvasSize();
   }
   if (linking) finishLink();
+  if (marquee) finishMarquee();
+});
+
+/* 框选(像桌面一样拖动选择多个节点) */
+let marquee = null;
+function renderMarquee() {
+  if (!marquee) return;
+  const x = Math.min(marquee.x0, marquee.x1);
+  const y = Math.min(marquee.y0, marquee.y1);
+  const w = Math.abs(marquee.x1 - marquee.x0);
+  const h = Math.abs(marquee.y1 - marquee.y0);
+  marqueeEl.hidden = false;
+  marqueeEl.style.left = x + "px";
+  marqueeEl.style.top = y + "px";
+  marqueeEl.style.width = w + "px";
+  marqueeEl.style.height = h + "px";
+}
+
+function finishMarquee() {
+  if (!marquee) return;
+  const x = Math.min(marquee.x0, marquee.x1);
+  const y = Math.min(marquee.y0, marquee.y1);
+  const w = Math.abs(marquee.x1 - marquee.x0);
+  const h = Math.abs(marquee.y1 - marquee.y0);
+  marquee = null;
+  marqueeEl.hidden = true;
+  const hits = [];
+  for (const it of items) {
+    const iw = it.w || 220;
+    const ih = it.h || 40;
+    if (it.x < x + w && it.x + iw > x && it.y < y + h && it.y + ih > y) hits.push(it.id);
+  }
+  setSelection(hits);
+  board.focus();
+}
+
+/* 画布背景:按下开始框选 */
+board.addEventListener("pointerdown", (e) => {
+  const t = e.target;
+  const isBg = t === board || t === canvas || t === itemsEl || t === linksSvg || t.classList.contains("board-marquee");
+  if (!isBg) return;
+  if (e.button !== undefined && e.button !== 0) return;
+  const p = canvasPoint(e);
+  marquee = { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
+  selectedIds.clear();
+  applySelectionUI();
+  renderMarquee();
 });
 
 /* 连线(思维导图) */
@@ -331,12 +445,12 @@ function startLink(fromId, e) {
 
 function moveTempLine(e) {
   if (!linking || !tempLine) return;
-  const rect = board.getBoundingClientRect();
   const a = items.find((i) => i.id === linking.from);
+  const p = canvasPoint(e);
   tempLine.setAttribute("x1", String(a.x + a.w));
-  tempLine.setAttribute("y1", String(a.y + a.h / 2));
-  tempLine.setAttribute("x2", String(e.clientX - rect.left));
-  tempLine.setAttribute("y2", String(e.clientY - rect.top));
+  tempLine.setAttribute("y1", String(a.y + (a.h || 40) / 2));
+  tempLine.setAttribute("x2", String(p.x));
+  tempLine.setAttribute("y2", String(p.y));
 }
 
 function finishLink() {
@@ -358,7 +472,7 @@ function finishLink() {
 /* 添加文本框(默认位置错开,避免互相重叠) */
 let spawnIdx = 0;
 function spawnPos() {
-  const off = (spawnIdx % 6) * 30;
+  const off = (spawnIdx % 8) * 34;
   spawnIdx++;
   return { x: 60 + off, y: 40 + off };
 }
@@ -370,6 +484,7 @@ function addTextBox(x, y, text) {
   itemsEl.appendChild(makeItemEl(it));
   const el = itemsEl.lastElementChild;
   it.h = el.offsetHeight || 40;
+  updateCanvasSize();
   const edit = el.querySelector(".board-text-content");
   if (!text) {
     edit.contentEditable = "true";
@@ -382,14 +497,9 @@ function addTextBox(x, y, text) {
 document.getElementById("btn-add-text").addEventListener("click", () => addTextBox());
 
 board.addEventListener("dblclick", (e) => {
-  if (e.target !== board && e.target !== linksSvg && e.target !== itemsEl) return;
-  const rect = board.getBoundingClientRect();
-  addTextBox(e.clientX - rect.left - 60, e.clientY - rect.top - 20);
-});
-
-/* 点击空白清除选中 */
-board.addEventListener("pointerdown", (e) => {
-  if (e.target === board || e.target === linksSvg || e.target === itemsEl) clearSelection();
+  if (e.target !== board && e.target !== canvas && e.target !== itemsEl && e.target !== linksSvg) return;
+  const p = canvasPoint(e);
+  addTextBox(p.x - 110, p.y - 20);
 });
 
 /* 粘贴图片 / 文本 */
@@ -414,7 +524,6 @@ board.addEventListener("paste", (e) => {
 function addImage(dataUrl) {
   const img = new Image();
   img.onload = () => {
-    // 压缩/限制尺寸,减小内存与 PDF 体积
     const MAX = 1200;
     let w = img.naturalWidth || 1;
     let h = img.naturalHeight || 1;
@@ -431,7 +540,7 @@ function addImage(dataUrl) {
     }
     const dispW = Math.min(280, w);
     const dispH = Math.round((dispW * h) / w);
-    const rect = board.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
     const it = {
       id: "img" + uid++,
       type: "image",
@@ -445,6 +554,7 @@ function addImage(dataUrl) {
     itemsEl.appendChild(makeItemEl(it));
     saveBoard();
     renderLinks();
+    updateCanvasSize();
   };
   img.src = dataUrl;
 }
@@ -453,13 +563,9 @@ function addImage(dataUrl) {
 board.addEventListener("keydown", (e) => {
   if (e.target.isContentEditable) return;
   if (e.key === "Delete" || e.key === "Backspace") {
-    if (selectedLinkId) {
-      e.preventDefault();
-      deleteLink(selectedLinkId);
-    } else if (selectedId) {
-      e.preventDefault();
-      deleteItem(selectedId);
-    }
+    e.preventDefault();
+    if (selectedLinkId) deleteLink(selectedLinkId);
+    else if (selectedIds.size) deleteSelected();
   }
 });
 
@@ -472,7 +578,7 @@ document.getElementById("btn-clear-board").addEventListener("click", () => {
   if (window.confirm("确定清空画板吗?此操作不可撤销。")) {
     items = [];
     links = [];
-    selectedId = null;
+    selectedIds.clear();
     selectedLinkId = null;
     renderBoard();
     saveBoard();
@@ -488,14 +594,35 @@ function setTab(tab) {
   document.getElementById("tab-board").setAttribute("aria-selected", String(!isText));
   document.getElementById("panel-text").hidden = !isText;
   document.getElementById("panel-board").hidden = isText;
-  if (!isText) renderBoard();
+  if (!isText) {
+    renderBoard();
+    updateCanvasSize();
+  }
 }
 
 document.getElementById("tab-text").addEventListener("click", () => setTab("text"));
 document.getElementById("tab-board").addEventListener("click", () => setTab("board"));
 
-/* 导出画板为矢量 PDF(所见即所得:深色背景 + 节点 + 连线 + 图片) */
+/* ---------- 导出画板为矢量 PDF(所见即所得 + 文字自动换行) ---------- */
 document.getElementById("btn-dl-pdf").addEventListener("click", exportBoardPdf);
+
+function wrapPdfLines(text, font, size, maxWidth) {
+  const lines = [];
+  for (const para of String(text || "").split("\n")) {
+    let line = "";
+    for (const ch of para) {
+      const test = line + ch;
+      if (font.widthOfTextAtSize(test, size) > maxWidth && line) {
+        lines.push(line);
+        line = ch;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+  }
+  return lines;
+}
 
 async function exportBoardPdf() {
   const btn = document.getElementById("btn-dl-pdf");
@@ -521,7 +648,6 @@ async function exportBoardPdf() {
     const font = await doc.embedFont(fontBytes, { subset: true }); // 子集化,PDF 体积更小
     const page = doc.addPage([maxX, maxY]);
 
-    // 深色背景(与浏览器一致)
     page.drawRectangle({
       x: 0,
       y: 0,
@@ -534,9 +660,8 @@ async function exportBoardPdf() {
     const nodeBg = rgb(28 / 255, 36 / 255, 33 / 255);
     const nodeBorder = rgb(90 / 255, 104 / 255, 98 / 255);
     const ink = rgb(0.957, 0.91, 0.84);
-    const accent = rgb(0.769, 0.478, 0.29);
 
-    // 连线(先画,在节点下层)
+    // 连线
     for (const l of links) {
       const a = items.find((i) => i.id === l.from);
       const b = items.find((i) => i.id === l.to);
@@ -551,34 +676,35 @@ async function exportBoardPdf() {
 
     // 节点与内容
     for (const it of items) {
-      const h = it.h || 40;
-      const topPdf = maxY - it.y; // 节点顶部在 PDF 坐标系中的 y
-      const radius = Math.min(12, h / 2);
+      const topPdf = maxY - it.y;
       if (it.type === "text") {
+        const size = 15;
+        const pad = 9;
+        const maxW = Math.max(40, it.w - pad * 2);
+        const lines = wrapPdfLines(it.text, font, size, maxW);
+        const lineH = size + 6;
+        const boxH = Math.max(40, pad * 2 + lines.length * lineH - 6);
         page.drawRectangle({
           x: it.x,
-          y: topPdf - h,
+          y: topPdf - boxH,
           width: it.w,
-          height: h,
+          height: boxH,
           color: nodeBg,
           borderColor: nodeBorder,
           borderWidth: 1,
-          borderRadius: radius,
+          borderRadius: Math.min(12, boxH / 2),
         });
-        const lines = (it.text || "").split("\n");
-        const size = 15;
-        const pad = 9;
         lines.forEach((line, i) => {
-          if (!line.trim()) return;
           page.drawText(line, {
             x: it.x + pad,
-            y: topPdf - pad - size * 0.8 - i * (size + 6),
+            y: topPdf - pad - size * 0.8 - i * lineH,
             size,
             font,
             color: ink,
           });
         });
       } else if (it.dataUrl) {
+        const h = it.h || 80;
         let img = null;
         try {
           if (it.dataUrl.startsWith("data:image/png")) img = await doc.embedPng(it.dataUrl);
@@ -593,7 +719,7 @@ async function exportBoardPdf() {
             color: nodeBg,
             borderColor: nodeBorder,
             borderWidth: 1,
-            borderRadius: radius,
+            borderRadius: Math.min(12, h / 2),
           });
           page.drawImage(img, { x: it.x + 4, y: topPdf - h + 4, width: it.w - 8, height: h - 8 });
         }

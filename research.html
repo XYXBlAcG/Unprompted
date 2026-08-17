@@ -46,8 +46,11 @@
           <span class="board-hint">单击选中 · 双击编辑文字 · 拖拽移动 · 拖右侧圆点连线 · 粘贴图片/文本 · Del 删除</span>
         </div>
         <div class="board" id="board" tabindex="0">
-          <svg class="board-links" id="board-links"></svg>
-          <div class="board-items" id="board-items"></div>
+          <div class="board-canvas" id="board-canvas">
+            <svg class="board-links" id="board-links"></svg>
+            <div class="board-items" id="board-items"></div>
+            <div class="board-marquee" id="board-marquee" hidden></div>
+          </div>
         </div>
         <div class="research-actions">
           <button type="button" class="btn primary" id="btn-dl-pdf">导出画板(矢量 PDF)</button>

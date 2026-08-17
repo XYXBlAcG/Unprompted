@@ -192,21 +192,51 @@ body {
   border: 1px solid #f4e8d62e;
   border-radius: 1rem;
   position: relative;
-  overflow: hidden;
+  overflow: auto;
   min-height: 320px;
+}
+
+/* 画布内容层:尺寸由 JS 根据节点范围动态扩展,超出可视区时可滚动 */
+.board-canvas {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
+  transform-origin: 0 0;
 }
 
 .board-links {
   pointer-events: none;
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  z-index: 2;
+}
+
+.board-links line.board-link-line {
+  pointer-events: none;
+}
+
+.board-links line.board-link-hit {
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.board-links line.board-link-hit.is-selected + .board-link-line {
+  stroke: var(--accent-bright) !important;
+  stroke-width: 3.5 !important;
 }
 
 .board-items {
   position: absolute;
   inset: 0;
+  z-index: 1;
+}
+
+.board-marquee {
+  position: absolute;
+  z-index: 3;
+  border: 1.5px solid var(--accent-bright);
+  background: rgba(224, 146, 92, .14);
+  pointer-events: none;
 }
 
 .board-item {
@@ -372,13 +402,3 @@ body {
   background: #d9564d;
 }
 
-/* 连线选中态 */
-.board-links line {
-  cursor: pointer;
-  pointer-events: stroke;
-}
-
-.board-links line.is-selected {
-  stroke: var(--accent-bright) !important;
-  stroke-width: 3.5 !important;
-}
