@@ -43,8 +43,3 @@ python3 -m http.server 5176
 
 > 注意:需通过 HTTP 访问(而非直接双击打开 `index.html`),`type="module"` 脚本与 manifest 才能正常加载。
 
-## 说明
-
-- 品牌名「Unprompted」按原站保留;原站页脚的「由 @bitterbuilds 制作」已按要求移除。
-- 转盘中央词汇已加粗显示。
-- `docs/screenshots/` 为本地运行时的预览截图,可删除。
