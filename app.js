@@ -15,72 +15,113 @@ const MODES = [
     id: "general",
     label: "综合",
     emoji: "✦",
-    topics: ["怀旧", "舒适区", "肌肉记忆", "通勤", "骚扰电话", "语音信箱", "门铃", "旧物传承", "书架", "杂物抽屉", "信息过载", "镜子", "候诊室", "自动更正", "群聊", "剩菜剩饭", "红绿灯"],
+    topics: ["怀旧", "舒适区", "肌肉记忆", "通勤", "骚扰电话", "语音信箱", "门铃", "旧物传承", "书架", "杂物抽屉", "信息过载", "镜子", "候诊室", "自动更正", "群聊", "剩菜剩饭", "红绿灯", "第一性原理", "第二曲线", "复利思维", "成长型思维", "极简主义", "数字游民", "心流", "孤独感", "亲密关系", "家庭聚会", "城市漫步", "老照片", "时间胶囊"],
   },
   {
     id: "deep-research",
     label: "深度研究",
     emoji: "🔎",
-    topics: ["富兰克林效应", "透明度错觉", "情感预测(影响偏差)", "聚焦错觉", "历史终结错觉", "讽刺过程理论", "情绪标记", "谢林点", "以牙还牙(以及善良策略为何胜出)", "消耗战", "昂贵信号", "志愿者困境", "猎鹿博弈", "鸵鸟效应", "赌场盈利效应", "折中效应", "面额效应", "检察官谬误", "辛普森悖论", "伯克森悖论", "小数定律", "假阳性悖论", "林迪效应"],
+    topics: ["富兰克林效应", "透明度错觉", "情感预测(影响偏差)", "聚焦错觉", "历史终结错觉", "讽刺过程理论", "情绪标记", "谢林点", "以牙还牙(以及善良策略为何胜出)", "消耗战", "昂贵信号", "志愿者困境", "猎鹿博弈", "鸵鸟效应", "赌场盈利效应", "折中效应", "面额效应", "检察官谬误", "辛普森悖论", "伯克森悖论", "小数定律", "假阳性悖论", "林迪效应", "可得性启发", "代表性启发", "锚定效应", "群体思维", "知识诅咒", "冒名顶替综合征", "决策疲劳", "帕金森琐碎定律", "古德哈特定律", "坎贝尔定律", "自我实现预言", "路西法效应", "斯坦福监狱实验", "米尔格拉姆实验", "沉没成本谬误", "禀赋效应"],
   },
   {
     id: "personal-finance",
     label: "个人理财",
     emoji: "💰",
-    topics: ["应急基金", "复利", "生活方式膨胀", "沉没成本", "机会成本", "净资产", "现金流", "高息债务", "未雨绸缪", "分散投资", "定投(DCA)", "流动性", "烧钱率", "安全网", "信用评分", "货币时间价值", "风险承受能力", "闲置现金", "订阅陷阱", "财务跑道", "延迟满足"],
+    topics: ["应急基金", "复利", "生活方式膨胀", "沉没成本", "机会成本", "净资产", "现金流", "高息债务", "未雨绸缪", "分散投资", "定投(DCA)", "流动性", "烧钱率", "安全网", "信用评分", "货币时间价值", "风险承受能力", "闲置现金", "订阅陷阱", "财务跑道", "延迟满足", "预算", "记账", "被动收入", "资产配置", "保险杠杆", "税务优化", "债务雪球", "财务自由", "FIRE 运动", "利率", "汇率风险", "通货膨胀"],
   },
   {
     id: "entrepreneurship",
     label: "创业",
     emoji: "🚀",
-    topics: ["切身利益", "第一个客户", "现金即氧气", "创始人模式", "学会说不", "分销渠道", "单位经济学", "护城河", "自筹资金", "产品市场契合", "声誉资本", "血汗股权", "苦干与杠杆", "独立创始人", "公开构建", "快速试错", "客户至上", "战略转型", "信任即货币", "一夜成功的神话", "副业天花板", "不完美也要交付"],
+    topics: ["切身利益", "第一个客户", "现金即氧气", "创始人模式", "学会说不", "分销渠道", "单位经济学", "护城河", "自筹资金", "产品市场契合", "声誉资本", "血汗股权", "苦干与杠杆", "独立创始人", "公开构建", "快速试错", "客户至上", "战略转型", "信任即货币", "一夜成功的神话", "副业天花板", "不完美也要交付", "最小可行实验", "精益创业", "客户开发", "创始人困境", "融资轮次", "估值", "股权稀释", "董事会", "退出策略", "并购"],
   },
   {
     id: "startups",
     label: "初创公司",
     emoji: "🌱",
-    topics: ["最小可行产品", "资金跑道", "种子轮", "增长黑客", "客户流失", "网络效应", "烧钱率", "增长势头", "转型", "创始人-市场契合", "滩头市场", "病毒式传播循环", "演示日", "产品债务", "早期采用者", "过早扩张", "收购式招聘", "登月计划", "从零到一"],
+    topics: ["最小可行产品", "资金跑道", "种子轮", "增长黑客", "客户流失", "网络效应", "烧钱率", "增长势头", "转型", "创始人-市场契合", "滩头市场", "病毒式传播循环", "演示日", "产品债务", "早期采用者", "过早扩张", "收购式招聘", "登月计划", "从零到一", "北极星指标", "留存率", "激活率", "推荐系数", "总可寻址市场(TAM)", "可服务市场(SAM)", "可获取市场(SOM)", "赛道选择", "冷启动", "增长飞轮"],
   },
   {
     id: "tech-ai",
     label: "科技 / AI",
     emoji: "🤖",
-    topics: ["黑盒", "训练数据", "提示词工程", "幻觉", "模型漂移", "延迟", "API 调用", "开源", "微调", "上下文窗口", "自动化偏见", "数据护城河", "边界情况", "技术债务", "单点故障", "云端与本地", "推理成本", "合成数据", "反馈回路", "零样本", "注意力机制", "智能体工作流"],
+    topics: ["黑盒", "训练数据", "提示词工程", "幻觉", "模型漂移", "延迟", "API 调用", "开源", "微调", "上下文窗口", "自动化偏见", "数据护城河", "边界情况", "技术债务", "单点故障", "云端与本地", "推理成本", "合成数据", "反馈回路", "零样本", "注意力机制", "智能体工作流", "涌现能力", "思维链", "检索增强生成(RAG)", "多模态", "对齐问题", "智能体", "向量数据库", "嵌入", "模型压缩", "量化", "知识蒸馏", "边缘计算", "联邦学习", "可解释性"],
   },
   {
     id: "fitness",
     label: "健身",
     emoji: "💪",
-    topics: "渐进式超负荷.休息日.肌肉记忆.动作质量优先于面子.平台期.热身.坚持胜过强度.减负周.活动范围.恢复欠账.个人纪录.身体成分.有氧基础.灵活性.酸痛作为信号.到场训练.负重呼吸.意念-肌肉连接.容量与强度.习惯叠加.健身房焦虑.保持期.功能性力量.睡眠也是训练.训练搭档.新手红利.长期运动员".split("."),
+    topics: ["渐进式超负荷", "休息日", "肌肉记忆", "动作质量优先于面子", "平台期", "热身", "坚持胜过强度", "减负周", "活动范围", "恢复欠账", "个人纪录", "身体成分", "有氧基础", "灵活性", "酸痛作为信号", "到场训练", "负重呼吸", "意念-肌肉连接", "容量与强度", "习惯叠加", "健身房焦虑", "保持期", "功能性力量", "睡眠也是训练", "训练搭档", "新手红利", "长期运动员", "最大摄氧量", "心率区间", "爆发力", "耐力", "核心力量", "深蹲深度", "硬拉", "卧推", "引体向上", "体态", "超量恢复"],
   },
   {
     id: "nutrition",
     label: "营养",
     emoji: "🥗",
-    topics: ["空热量", "蛋白质", "补水", "备餐", "渴望与饥饿", "微量营养素", "膳食纤维", "血糖飙升", "正念饮食", "天然食物", "肠道健康", "欺骗餐", "情绪化进食", "可持续热量缺口", "早餐习惯", "深夜零食", "超加工食品", "吃够", "盘中色彩", "社交饮食", "进食时间", "补剂", "家庭烹饪", "能量可用性"],
+    topics: ["空热量", "蛋白质", "补水", "备餐", "渴望与饥饿", "微量营养素", "膳食纤维", "血糖飙升", "正念饮食", "天然食物", "肠道健康", "欺骗餐", "情绪化进食", "可持续热量缺口", "早餐习惯", "深夜零食", "超加工食品", "吃够", "盘中色彩", "社交饮食", "进食时间", "补剂", "家庭烹饪", "能量可用性", "宏量营养素", "升糖指数", "胰岛素抵抗", "生酮饮食", "间歇性断食", "地中海饮食", "植物蛋白", "乳清蛋白", "益生菌", "抗氧化剂", "慢性炎症"],
   },
   {
     id: "productivity",
     label: "效率",
     emoji: "⚡",
-    topics: ["深度工作", "情境切换", "收件箱清零", "时间盒", "帕金森定律", "两分钟法则", "批量处理", "精力管理", "完成优于完美", "未闭环事项", "专注模式", "会议税", "单任务处理", "晨间手记", "关机仪式", "第二大脑", "拖延", "减少摩擦", "注意力残留", "受保护时间", "产出大于工时", "分心节食"],
+    topics: ["深度工作", "情境切换", "收件箱清零", "时间盒", "帕金森定律", "两分钟法则", "批量处理", "精力管理", "完成优于完美", "未闭环事项", "专注模式", "会议税", "单任务处理", "晨间手记", "关机仪式", "第二大脑", "拖延", "减少摩擦", "注意力残留", "受保护时间", "产出大于工时", "分心节食", "番茄工作法", "艾森豪威尔矩阵", "GTD", "习惯养成", "目标设定", "心流状态", "时间日志", "精力高峰", "双峰工作法", "深度休息", "数字极简"],
   },
   {
     id: "history",
     label: "历史",
     emoji: "📜",
-    topics: "柏林墙倒塌.登月.印刷术的发明.大宪章签署.攻占巴士底狱.第一届奥运会.青霉素的发现.莱特兄弟首飞.君士坦丁堡陷落.波士顿倾茶事件.向华盛顿进军.丝绸之路的开通.切尔诺贝利灾难.长城的建成.凡尔赛条约.第一张照片.苏伊士运河通航.英国废除奴隶制.斯普特尼克发射.佛罗伦萨文艺复兴.1929 年股市崩盘.纳尔逊·曼德拉获释.金字塔的建造.首次妇女参政胜利.广岛原子弹.郑和下西洋.罗马帝国灭亡.互联网的发明".split("."),
+    topics: ["柏林墙倒塌", "登月", "印刷术的发明", "大宪章签署", "攻占巴士底狱", "第一届奥运会", "青霉素的发现", "莱特兄弟首飞", "君士坦丁堡陷落", "波士顿倾茶事件", "向华盛顿进军", "丝绸之路的开通", "切尔诺贝利灾难", "长城的建成", "凡尔赛条约", "第一张照片", "苏伊士运河通航", "英国废除奴隶制", "斯普特尼克发射", "佛罗伦萨文艺复兴", "1929 年股市崩盘", "纳尔逊·曼德拉获释", "金字塔的建造", "首次妇女参政胜利", "广岛原子弹", "郑和下西洋", "罗马帝国灭亡", "互联网的发明", "十字军东征", "黑死病", "工业革命", "法国大革命", "美国独立战争", "冷战", "大航海时代", "蒸汽机的发明", "电报的发明", "马可·波罗东游"],
   },
   {
     id: "literature",
     label: "文学",
     emoji: "📚",
-    topics: ["1984", "白鲸", "傲慢与偏见", "百年孤独", "了不起的盖茨比", "罪与罚", "杀死一只知更鸟", "美丽新世界", "奥德赛", "弗兰肯斯坦", "堂吉诃德", "宠儿", "麦田里的守望者", "战争与和平", "第五号屠宰场", "欧内斯特·海明威", "弗朗茨·卡夫卡", "费奥多尔·陀思妥耶夫斯基", "埃德加·爱伦·坡", "詹姆斯·乔伊斯", "艾米莉·狄金森", "马克·吐温"],
+    topics: ["1984", "白鲸", "傲慢与偏见", "百年孤独", "了不起的盖茨比", "罪与罚", "杀死一只知更鸟", "美丽新世界", "奥德赛", "弗兰肯斯坦", "堂吉诃德", "宠儿", "麦田里的守望者", "战争与和平", "第五号屠宰场", "欧内斯特·海明威", "弗朗茨·卡夫卡", "费奥多尔·陀思妥耶夫斯基", "埃德加·爱伦·坡", "詹姆斯·乔伊斯", "艾米莉·狄金森", "马克·吐温", "哈姆雷特", "麦克白", "李尔王", "浮士德", "神曲", "尤利西斯", "追忆似水年华", "局外人", "变形记", "一千零一夜", "伊索寓言", "荷马史诗", "红楼梦", "西游记", "三国演义", "水浒传", "鲁迅", "老舍"],
+  },
+  {
+    id: "psychology",
+    label: "心理学",
+    emoji: "🧠",
+    topics: ["认知失调", "习得性无助", "达克效应", "巴纳姆效应", "光环效应", "首因效应", "近因效应", "从众心理", "旁观者效应", "锚定效应", "框架效应", "损失厌恶", "确认偏误", "幸存者偏差", "禀赋效应", "心理账户", "蔡格尼克效应", "延迟折扣", "基本归因错误", "自我服务偏差", "虚假共识效应", "投射效应", "皮格马利翁效应", "霍桑效应", "自我实现预言", "路西法效应", "群体极化", "责任分散", "习得性乐观", "成长型心态"],
+  },
+  {
+    id: "economics",
+    label: "经济学",
+    emoji: "📈",
+    topics: ["边际效用", "供需法则", "价格弹性", "比较优势", "通货膨胀", "通货紧缩", "滞胀", "货币政策", "财政政策", "量化宽松", "负利率", "挤出效应", "搭便车问题", "公地悲剧", "帕累托最优", "零和博弈", "正和博弈", "逆向选择", "道德风险", "柠檬市场", "价格歧视", "自然垄断", "外部性", "机会成本", "沉没成本谬误", "看不见的手", "凯恩斯主义", "货币主义", "奥地利学派", "行为经济学"],
+  },
+  {
+    id: "marketing",
+    label: "营销",
+    emoji: "📣",
+    topics: ["品牌资产", "市场定位", "细分市场", "目标客户", "4P 理论", "营销漏斗", "转化率", "获客成本(CAC)", "客户生命周期价值(LTV)", "病毒式营销", "口碑营销", "内容营销", "影响者营销", "邮件营销", "SEO", "差异化", "定价策略", "心理定价", "免费增值模式", "订阅模式", "客户旅程", "净推荐值(NPS)", "复购率", "品牌忠诚度", "定位声明", "渠道策略", "促销策略", "痛点营销", "稀缺效应", "从众效应"],
+  },
+  {
+    id: "management",
+    label: "管理",
+    emoji: "🧭",
+    topics: ["目标管理(MBO)", "OKR", "KPI", "精益管理", "六西格玛", "敏捷开发", "看板", "授权", "激励理论", "马斯洛需求层次", "双因素理论", "情境领导", "变革管理", "组织文化", "扁平化组织", "矩阵组织", "阿米巴经营", "蓝海战略", "波特五力", "SWOT 分析", "平衡计分卡", "决策树", "彼得原理", "管理幅度", "赋能", "对齐", "复盘", "灰度决策", "危机管理", "知识管理"],
+  },
+  {
+    id: "philosophy",
+    label: "哲学",
+    emoji: "🏛️",
+    topics: ["功利主义", "义务论", "美德伦理", "存在主义", "虚无主义", "犬儒主义", "斯多葛主义", "享乐主义", "自由意志", "决定论", "二元论", "唯物论", "唯心论", "实证主义", "实用主义", "现象学", "认识论", "本体论", "伦理利己主义", "社会契约", "电车难题", "缸中之脑", "忒修斯之船", "中文房间", "道德相对主义", "利他主义", "自我欺骗", "意义感", "幸福论", "西西弗斯神话"],
+  },
+  {
+    id: "science",
+    label: "科学",
+    emoji: "🔬",
+    topics: ["科学方法", "控制变量", "假设检验", "统计显著性", "效应量", "随机对照试验", "双盲实验", "安慰剂效应", "因果推断", "相关不等于因果", "可重复性危机", "预注册", "荟萃分析", "系统综述", "奥卡姆剃刀", "熵", "混沌理论", "涌现", "自组织", "临界点", "蝴蝶效应", "指数增长", "对数尺度", "正态分布", "长尾分布", "幂律", "第一性原理", "还原论", "整体论", "科学范式", "证伪主义"],
+  },
+  {
+    id: "design",
+    label: "设计",
+    emoji: "🎨",
+    topics: ["设计思维", "用户研究", "同理心地图", "用户画像", "用户旅程地图", "线框图", "原型", "高保真", "可用性测试", "信息架构", "心智模型", "认知负荷", "希克定律", "费茨定律", "格式塔原理", "视觉层次", "留白", "对比度", "排版", "色彩理论", "无障碍设计", "移动优先", "响应式设计", "设计系统", "组件库", "交互设计", "情感化设计", "极简设计", "暗黑模式", "动效设计"],
   },
 ];
 
 const NICHE_MODES = MODES.filter((m) => m.id !== "deep-research");
-const DEEP_RESEARCH_MODE = MODES.find((m) => m.id === "deep-research");
 const SPEECH_STAGES = ["是什么?", "所以呢?", "然后呢?"];
 
 /* ------------------------- 工具函数 ------------------------- */
@@ -158,6 +199,41 @@ function writeMuted(v) {
   try {
     window.localStorage.setItem(LS_PREFIX + "muted", String(v));
   } catch {}
+}
+
+/* 话题词汇的读取 / 保存(支持自定义覆盖,localStorage 优先于内置词库) */
+const TOPICS_PREFIX = LS_PREFIX + "topics:";
+
+function defaultTopics(modeId) {
+  const mode = MODES.find((m) => m.id === modeId) ?? MODES[0];
+  return [...mode.topics]; // 返回副本,避免修改内置词库
+}
+
+function loadTopics(modeId) {
+  try {
+    const raw = window.localStorage.getItem(TOPICS_PREFIX + modeId);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return arr.map((t) => String(t).trim()).filter(Boolean);
+      }
+    }
+  } catch {}
+  return defaultTopics(modeId);
+}
+
+function saveTopics(modeId, topics) {
+  try {
+    window.localStorage.setItem(TOPICS_PREFIX + modeId, JSON.stringify(topics));
+  } catch {}
+}
+
+function hasCustomTopics(modeId) {
+  try {
+    return window.localStorage.getItem(TOPICS_PREFIX + modeId) !== null;
+  } catch {
+    return false;
+  }
 }
 
 /* ------------------------- 音效(Web Audio) ------------------------- */
@@ -249,8 +325,11 @@ function playDoneChime() {
 
 const root = document.getElementById("root");
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+const SVG_TAGS = new Set(["svg", "path", "circle", "rect", "line", "polyline", "polygon", "ellipse", "g", "defs", "use", "text", "tspan", "clipPath", "mask", "linearGradient", "radialGradient", "stop"]);
+
 function el(tag, attrs = {}, ...children) {
-  const node = document.createElement(tag);
+  const node = SVG_TAGS.has(tag) ? document.createElementNS(SVG_NS, tag) : document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
     if (v === null || v === undefined) continue;
     if (k === "class") node.className = v;
@@ -296,7 +375,7 @@ const researchActive = () => state.phase === "research";
 const speechOrDone = () => state.phase === "speech" || state.phase === "done";
 
 function currentPool() {
-  return state.mode === "deep-research" ? DEEP_RESEARCH_MODE.topics : modeByNiche(state.niche).topics;
+  return loadTopics(state.mode === "deep-research" ? "deep-research" : state.niche);
 }
 
 /* ------------------------- 渲染 ------------------------- */
@@ -306,25 +385,7 @@ function build() {
     el("div", { class: "page" },
       el("div", { class: "atmosphere", "aria-hidden": "true" }),
       el("header", { class: "brand", id: "brand" },
-        el("p", { class: "brand-mark", text: "Unprompted" }),
-        el("h1", { class: "brand-line" },
-          "由 ",
-          el("a", {
-            class: "brand-link",
-            href: "https://www.instagram.com/bitterbuilds/",
-            target: "_blank",
-            rel: "noopener noreferrer",
-            "aria-label": "@bitterbuilds 在 Instagram 上",
-          },
-            el("svg", { class: "brand-link-icon", viewBox: "0 0 24 24", "aria-hidden": "true", focusable: "false" },
-              el("rect", { x: "3", y: "3", width: "18", height: "18", rx: "5", ry: "5" }),
-              el("circle", { cx: "12", cy: "12", r: "4.2" }),
-              el("circle", { cx: "17.4", cy: "6.6", r: "1.1", fill: "currentColor", stroke: "none" })
-            ),
-            el("span", { text: "@bitterbuilds" })
-          ),
-          " 制作"
-        )
+        el("p", { class: "brand-mark", text: "Unprompted" })
       ),
       el("main", { class: "stage" },
         el("div", { class: "stage-body", id: "stage-body" },
@@ -395,32 +456,59 @@ function build() {
   );
 }
 
-/* 设置面板(渲染到 body) */
+/* 设置面板(渲染到 body):包含「设置」与「词汇管理」两个视图 */
 function buildSettings() {
   return el("div", { class: "settings-overlay", id: "settings-overlay", role: "presentation", hidden: true },
     el("div", { class: "settings-panel", id: "settings-panel", role: "dialog", "aria-modal": "true", "aria-labelledby": "settings-title" },
       el("header", { class: "settings-panel-head" },
         el("h2", { class: "settings-panel-title", id: "settings-title", text: "设置" }),
-        el("p", { class: "settings-panel-blurb", text: "计时长度以整分钟为单位。" })
+        el("p", { class: "settings-panel-blurb", id: "settings-blurb", text: "计时长度以整分钟为单位。" })
       ),
-      durationField("演讲", state.speechSeconds / 60, 1, 10, (mins) => {
-        const secs = clampSpeech(mins * 60);
-        state.speechSeconds = secs;
-        writeSeconds("speech", secs);
-        renderSettingsValues();
-      }),
-      durationField("研究", state.researchSeconds / 60, 1, 60, (mins) => {
-        const secs = clampResearch(mins * 60);
-        state.researchSeconds = secs;
-        writeSeconds("research", secs);
-        renderSettingsValues();
-      }, "仅深度研究模式"),
-      el("div", { class: "settings-mute" },
-        el("input", { type: "checkbox", id: "settings-mute-input", checked: muted }),
-        el("label", { for: "settings-mute-input", text: "静音音效" })
+      el("div", { id: "settings-view" },
+        durationField("演讲", state.speechSeconds / 60, 1, 10, (mins) => {
+          const secs = clampSpeech(mins * 60);
+          state.speechSeconds = secs;
+          writeSeconds("speech", secs);
+          renderSettingsValues();
+        }),
+        durationField("研究", state.researchSeconds / 60, 1, 60, (mins) => {
+          const secs = clampResearch(mins * 60);
+          state.researchSeconds = secs;
+          writeSeconds("research", secs);
+          renderSettingsValues();
+        }, "仅深度研究模式"),
+        el("div", { class: "settings-mute" },
+          el("input", { type: "checkbox", id: "settings-mute-input", checked: muted }),
+          el("label", { for: "settings-mute-input", text: "静音音效" })
+        ),
+        el("p", { class: "settings-note", text: "设置将保存到下次使用。" }),
+        el("button", { type: "button", class: "btn secondary settings-vocab-btn", id: "settings-vocab-btn", text: "词汇管理" }),
+        el("button", { type: "button", class: "btn primary settings-done", id: "settings-done", text: "完成" })
       ),
-      el("p", { class: "settings-note", text: "设置将保存到下次使用。" }),
-      el("button", { type: "button", class: "btn primary settings-done", id: "settings-done", text: "完成" })
+      el("div", { id: "vocab-view", hidden: true },
+        el("div", { class: "vocab-pick" },
+          el("label", { class: "vocab-pick-label", for: "vocab-select", text: "选择领域" }),
+          el("select", { id: "vocab-select", class: "vocab-select" },
+            MODES.map((m) => el("option", { value: m.id, text: `${m.emoji} ${m.label}` }))
+          ),
+          el("span", { class: "vocab-count", id: "vocab-count" })
+        ),
+        el("div", { class: "vocab-list", id: "vocab-list" }),
+        el("div", { class: "vocab-add" },
+          el("input", { type: "text", id: "vocab-input", class: "vocab-input", placeholder: "输入新词汇,回车添加", maxlength: "60" }),
+          el("button", { type: "button", class: "btn primary vocab-add-btn", id: "vocab-add-btn", text: "添加" })
+        ),
+        el("details", { class: "vocab-import", id: "vocab-import" },
+          el("summary", { text: "批量导入" }),
+          el("p", { class: "vocab-import-hint", text: "每行一个词汇;可用 LLM 生成后直接粘贴导入,自动去除编号/圆点。" }),
+          el("textarea", { id: "vocab-import-text", class: "vocab-import-text", rows: "6", placeholder: "词汇一\n词汇二\n词汇三" }),
+          el("div", { class: "vocab-import-actions" },
+            el("button", { type: "button", class: "btn secondary", id: "vocab-import-btn", text: "导入" }),
+            el("button", { type: "button", class: "btn ghost", id: "vocab-reset-btn", text: "恢复默认" })
+          )
+        ),
+        el("button", { type: "button", class: "btn ghost vocab-back", id: "vocab-back", text: "← 返回设置" })
+      )
     )
   );
 }
@@ -547,15 +635,12 @@ function renderTimerOverlay() {
   // 操作按钮(仅在 phase 变化时重建,避免打断动画与焦点)
   if (state.phase !== overlayPhase) {
     const actions = document.getElementById("timer-actions");
-    actions.replaceChildren(
-      research
-        ? el("button", { type: "button", class: "btn primary", onclick: finishResearchEarly, text: "研究完成" })
-        : null,
-      ready
-        ? el("button", { type: "button", class: "btn primary", onclick: startSpeechFromReady, text: "准备开始演讲" })
-        : null,
-      el("button", { type: "button", class: "btn ghost", onclick: closeTimer, text: "关闭" })
-    );
+    const buttons = [
+      research ? el("button", { type: "button", class: "btn primary", onclick: finishResearchEarly, text: "研究完成" }) : null,
+      ready ? el("button", { type: "button", class: "btn primary", onclick: startSpeechFromReady, text: "准备开始演讲" }) : null,
+      el("button", { type: "button", class: "btn ghost", onclick: closeTimer, text: "关闭" }),
+    ].filter(Boolean);
+    actions.replaceChildren(...buttons);
     const primary = actions.querySelector(".btn.primary");
     (primary ?? actions.querySelector(".btn.ghost"))?.focus();
     overlayPhase = state.phase;
@@ -609,7 +694,7 @@ function renderMain() {
   reel.classList.toggle("is-spinning", state.spinning);
   reel.classList.toggle("is-landed", !!state.landed);
   document.getElementById("reel-eyebrow").textContent = state.spinning ? "抽取中…" : state.landed ? "你的话题" : "就绪";
-  document.getElementById("reel-phrase").textContent = state.shown;
+  document.getElementById("reel-phrase").textContent = state.shown || "";
   document.getElementById("sr-live").textContent = state.landed ? `你的话题:${state.landed}` : "";
 
   // 按钮
@@ -652,8 +737,8 @@ try {
   build();
   document.body.appendChild(buildSettings());
   const initial = currentPool();
-  state.shown = rand(initial);
-  currentIndex = Math.max(0, initial.indexOf(state.shown));
+  state.shown = initial.length ? rand(initial) : null;
+  currentIndex = initial.length ? Math.max(0, initial.indexOf(state.shown)) : 0;
   renderMain();
 } catch (err) {
   console.error("Unprompted 启动失败", err);
@@ -663,6 +748,12 @@ try {
 /* ------------------------- 交互:转盘 ------------------------- */
 
 function pickTopic(pool) {
+  if (!pool || !pool.length) {
+    state.shown = null;
+    state.landed = null;
+    renderMain();
+    return;
+  }
   const topic = rand(pool);
   currentIndex = Math.max(0, pool.indexOf(topic));
   state.shown = topic;
@@ -686,15 +777,28 @@ function cancelSpin() {
   forceTimer = null;
 }
 
+let emptyNoticeTimer = null;
+
+function showEmptyNotice() {
+  const eyebrow = document.getElementById("reel-eyebrow");
+  eyebrow.textContent = "该领域暂无词汇";
+  clearTimeout(emptyNoticeTimer);
+  emptyNoticeTimer = setTimeout(() => renderMain(), 1600);
+}
+
 function spin() {
   if (state.spinning || timerActive()) return;
+  const pool = currentPool();
+  if (!pool.length) {
+    showEmptyNotice();
+    return;
+  }
   unlockAudio();
   cancelSpin();
   state.spinning = true;
   state.landed = null;
   renderMain();
 
-  const pool = currentPool();
   const len = pool.length;
   const startIdx = currentIndex % len;
   const { totalSteps, landIndex } = spinPlan(startIdx, len);
@@ -757,7 +861,7 @@ function selectMode(id) {
   if (state.spinning || timerActive() || id === state.mode) return;
   if (id !== "off-the-cuff") setNicheOpen(false);
   state.mode = id;
-  pickTopic(id === "deep-research" ? DEEP_RESEARCH_MODE.topics : modeByNiche(state.niche).topics);
+  pickTopic(loadTopics(id === "deep-research" ? "deep-research" : state.niche));
   renderMain();
 }
 
@@ -937,6 +1041,7 @@ function setSettingsOpen(open) {
   settingsTrigger.setAttribute("aria-controls", open ? "settings-panel" : "");
   renderMain();
   if (open) {
+    setSettingsView("settings");
     settingsPanel.querySelector("input, button")?.focus();
   } else {
     settingsTrigger.focus();
@@ -956,12 +1061,130 @@ document.getElementById("settings-mute-input").addEventListener("change", (e) =>
 
 document.getElementById("settings-done").addEventListener("click", () => setSettingsOpen(false));
 
+/* 词汇管理 */
+let vocabMode = "general";
+let vocabViewOpen = false;
+
+function setSettingsView(view) {
+  vocabViewOpen = view === "vocab";
+  document.getElementById("settings-view").hidden = vocabViewOpen;
+  document.getElementById("vocab-view").hidden = !vocabViewOpen;
+  document.getElementById("settings-title").textContent = vocabViewOpen ? "词汇管理" : "设置";
+  document.getElementById("settings-blurb").textContent = vocabViewOpen
+    ? "自定义各领域的话题词汇,支持单个添加与批量导入。"
+    : "计时长度以整分钟为单位。";
+  if (vocabViewOpen) {
+    renderVocab();
+    document.getElementById("vocab-select").focus();
+  }
+}
+
+function renderVocab() {
+  const topics = loadTopics(vocabMode);
+  const listEl = document.getElementById("vocab-list");
+  listEl.replaceChildren(
+    ...topics.map((word, i) =>
+      el("div", { class: "vocab-item" },
+        el("span", { class: "vocab-word", text: word }),
+        el("button", {
+          type: "button",
+          class: "vocab-del",
+          "aria-label": `删除「${word}」`,
+          title: "删除",
+          onclick: () => deleteWord(i),
+          text: "×",
+        })
+      )
+    )
+  );
+  document.getElementById("vocab-count").textContent = `${topics.length} 个词汇`;
+  document.getElementById("vocab-select").value = vocabMode;
+}
+
+function syncTopicsAfterEdit() {
+  const pool = currentPool();
+  if (state.shown && !pool.includes(state.shown)) pickTopic(pool);
+  else renderMain();
+}
+
+function deleteWord(index) {
+  const topics = loadTopics(vocabMode);
+  topics.splice(index, 1);
+  saveTopics(vocabMode, topics);
+  syncTopicsAfterEdit();
+  renderVocab();
+}
+
+function addWord() {
+  const input = document.getElementById("vocab-input");
+  const word = input.value.trim();
+  if (!word) return;
+  const topics = loadTopics(vocabMode);
+  if (!topics.includes(word)) topics.push(word);
+  saveTopics(vocabMode, topics);
+  input.value = "";
+  syncTopicsAfterEdit();
+  renderVocab();
+  input.focus();
+}
+
+function importWords() {
+  const ta = document.getElementById("vocab-import-text");
+  const lines = ta.value
+    .split(/\n/)
+    .map((l) => l.replace(/^\s*[-*•▪▪\d]+[.)、\s]\s*/, "").trim())
+    .filter(Boolean);
+  if (!lines.length) return;
+  const topics = loadTopics(vocabMode);
+  let added = 0;
+  for (const w of lines) {
+    if (!topics.includes(w)) {
+      topics.push(w);
+      added++;
+    }
+  }
+  saveTopics(vocabMode, topics);
+  ta.value = "";
+  syncTopicsAfterEdit();
+  renderVocab();
+  const btn = document.getElementById("vocab-import-btn");
+  const old = btn.textContent;
+  btn.textContent = `已导入 ${added} 个`;
+  setTimeout(() => { btn.textContent = old; }, 1400);
+}
+
+function restoreTopics() {
+  saveTopics(vocabMode, defaultTopics(vocabMode));
+  syncTopicsAfterEdit();
+  renderVocab();
+}
+
+document.getElementById("settings-vocab-btn").addEventListener("click", () => setSettingsView("vocab"));
+document.getElementById("vocab-back").addEventListener("click", () => setSettingsView("settings"));
+document.getElementById("vocab-select").addEventListener("change", (e) => {
+  vocabMode = e.target.value;
+  renderVocab();
+});
+document.getElementById("vocab-add-btn").addEventListener("click", addWord);
+document.getElementById("vocab-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    addWord();
+  }
+});
+document.getElementById("vocab-import-btn").addEventListener("click", importWords);
+document.getElementById("vocab-reset-btn").addEventListener("click", restoreTopics);
+
 /* 焦点陷阱 */
 document.addEventListener("keydown", (e) => {
   if (!state.settingsOpen) return;
   if (e.key === "Escape") {
     e.preventDefault();
-    setSettingsOpen(false);
+    if (vocabViewOpen) {
+      setSettingsView("settings");
+    } else {
+      setSettingsOpen(false);
+    }
     return;
   }
   if (e.key !== "Tab") return;
