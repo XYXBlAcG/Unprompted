@@ -480,6 +480,11 @@ body {
   position: relative;
 }
 
+/* 下拉菜单展开时提升层级,避免被设置按钮(z-index:6)遮挡 */
+.niche-select.is-open {
+  z-index: 15;
+}
+
 .niche-trigger {
   appearance: none;
   cursor: pointer;
