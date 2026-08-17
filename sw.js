@@ -1,5 +1,5 @@
 /* Unprompted — Service Worker(离线缓存,版本更新时请递增 CACHE_NAME) */
-const CACHE_NAME = "unprompted-v2";
+const CACHE_NAME = "unprompted-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -15,6 +15,7 @@ const ASSETS = [
   "./vendor/pdf-lib.min.js",
   "./vendor/fontkit.umd.min.js",
   "./vendor/qrcode.js",
+  "./vendor/marked.min.js",
   "./assets/cjk-font.ttf",
 ];
 
