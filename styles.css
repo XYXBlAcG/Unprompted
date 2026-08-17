@@ -1352,6 +1352,167 @@ body {
   width: 100%;
 }
 
+.duration-presets {
+  gap: .4rem;
+  margin-top: .6rem;
+  flex-wrap: wrap;
+  display: flex;
+}
+
+.duration-preset {
+  appearance: none;
+  cursor: pointer;
+  color: var(--muted);
+  background: #f4e8d60d;
+  border: 1px solid #f4e8d62e;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: .72rem;
+  font-weight: 550;
+  padding: .28rem .7rem;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.duration-preset:hover {
+  color: var(--ink);
+  background: #f4e8d614;
+  border-color: #f4e8d652;
+}
+
+.duration-preset:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.settings-shortcuts {
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: .74rem;
+  line-height: 1.5;
+  margin: .7rem 0 0;
+}
+
+.today-btn {
+  font-size: .85rem;
+  padding: .5rem .9rem;
+}
+
+.timer-record {
+  color: #ff9d9d;
+  font-family: var(--font-body);
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  margin: 0;
+}
+
+.timer-record::before {
+  content: "";
+  width: .55rem;
+  height: .55rem;
+  border-radius: 50%;
+  background: #ff5f56;
+  margin-right: .45rem;
+  animation: record-blink 1.2s ease-in-out infinite;
+  display: inline-block;
+}
+
+@keyframes record-blink {
+  0%, to {
+    opacity: 1;
+  }
+  50% {
+    opacity: .25;
+  }
+}
+
+.timer-guide {
+  max-width: 46ch;
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: .88rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.vocab-custom-actions {
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .65rem;
+  flex-wrap: wrap;
+  display: flex;
+}
+
+.vocab-custom-actions .btn {
+  padding: .5rem 1rem;
+  font-size: .85rem;
+}
+
+.vocab-new-form {
+  align-items: center;
+  gap: .45rem;
+  margin-bottom: .65rem;
+  flex-wrap: wrap;
+  display: flex;
+}
+
+.vocab-new-name {
+  flex: 1;
+  min-width: 9rem;
+  background: #f4e8d60d;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: .88rem;
+  border: 1px solid #f4e8d62e;
+  border-radius: .6rem;
+  padding: .5rem .7rem;
+}
+
+.vocab-new-emoji {
+  width: 5.5rem;
+  text-align: center;
+  background: #f4e8d60d;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: .88rem;
+  border: 1px solid #f4e8d62e;
+  border-radius: .6rem;
+  padding: .5rem .6rem;
+}
+
+.vocab-new-name:focus-visible,
+.vocab-new-emoji:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+
+.vocab-new-form .btn {
+  padding: .5rem 1rem;
+}
+
+.app-toast {
+  z-index: 70;
+  pointer-events: none;
+  color: var(--ink);
+  background: #232b28;
+  border: 1px solid #f4e8d62e;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: .85rem;
+  padding: .55rem 1.1rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .25s, transform .25s;
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+}
+
+.app-toast.is-show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .brand, .stage, .reel.is-landed .reel-phrase, .reel.is-spinning .reel-phrase, .timer-overlay, .timer-overlay-inner, .settings-overlay, .settings-panel, .niche-menu {
     animation: none !important;

@@ -123,6 +123,11 @@ const MODES = [
 
 const NICHE_MODES = MODES.filter((m) => m.id !== "deep-research");
 const SPEECH_STAGES = ["是什么?", "所以呢?", "然后呢?"];
+const SPEECH_GUIDES = [
+  "先用一两句话给出定义或解释。",
+  "说说它为什么重要,对谁有影响。",
+  "给出你的观点、例子或下一步行动。",
+];
 
 /* ------------------------- 工具函数 ------------------------- */
 
@@ -130,8 +135,8 @@ const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const easeOutCubic = (t) => 1 - (1 - t) ** 3;
 
-function modeByNiche(id) {
-  return MODES.find((m) => m.id === id) ?? MODES[0];
+function findMode(id) {
+  return MODES.find((m) => m.id === id) || customModes.find((m) => m.id === id) || MODES[0];
 }
 
 function practiceMode(id) {
@@ -201,12 +206,61 @@ function writeMuted(v) {
   } catch {}
 }
 
+function readRecord() {
+  try {
+    const raw = window.localStorage.getItem(LS_PREFIX + "record");
+    if (raw === null) return false;
+    return raw === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeRecord(v) {
+  try {
+    window.localStorage.setItem(LS_PREFIX + "record", String(v));
+  } catch {}
+}
+
+/* 自定义领域(存储在 localStorage,合并进领域列表) */
+function loadCustomModes() {
+  try {
+    const raw = window.localStorage.getItem(LS_PREFIX + "custom-modes");
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return arr
+          .filter((m) => m && typeof m.id === "string" && m.id.startsWith("custom-") && m.label)
+          .map((m) => ({
+            id: m.id,
+            label: String(m.label).trim().slice(0, 20),
+            emoji: String(m.emoji || "📌").trim().slice(0, 4) || "📌",
+            topics: [],
+          }));
+      }
+    }
+  } catch {}
+  return [];
+}
+
+let customModes = loadCustomModes();
+
+function saveCustomModes() {
+  try {
+    window.localStorage.setItem(LS_PREFIX + "custom-modes", JSON.stringify(customModes));
+  } catch {}
+}
+
+function getNicheModes() {
+  return [...NICHE_MODES, ...customModes];
+}
+
 /* 话题词汇的读取 / 保存(支持自定义覆盖,localStorage 优先于内置词库) */
 const TOPICS_PREFIX = LS_PREFIX + "topics:";
 
 function defaultTopics(modeId) {
-  const mode = MODES.find((m) => m.id === modeId) ?? MODES[0];
-  return [...mode.topics]; // 返回副本,避免修改内置词库
+  const mode = findMode(modeId);
+  return [...(mode.topics ?? [])]; // 返回副本,避免修改内置词库;自定义领域默认无词
 }
 
 function loadTopics(modeId) {
@@ -240,6 +294,13 @@ function hasCustomTopics(modeId) {
 
 let audioCtx = null;
 let muted = readMuted();
+let recordOn = readRecord();
+let mediaRecorder = null;
+let mediaStream = null;
+let recordedChunks = [];
+let recordedBlob = null;
+let recordAudio = null;
+let recordAudioUrl = null;
 
 function getAudio() {
   audioCtx = audioCtx || new AudioContext();
@@ -415,7 +476,7 @@ function build() {
                 el("span", { class: "niche-caret", "aria-hidden": "true" })
               ),
               el("div", { class: "niche-menu", id: "niche-menu", role: "listbox", "aria-label": "话题领域", hidden: true },
-                NICHE_MODES.map((m, i) =>
+                getNicheModes().map((m, i) =>
                   el("div", {
                     class: "niche-option",
                     role: "option",
@@ -442,6 +503,7 @@ function build() {
             el("button", { type: "button", class: "btn primary", id: "btn-spin", text: "抽取" }),
             el("button", { type: "button", class: "btn secondary", id: "btn-start", disabled: true })
           ),
+          el("button", { type: "button", class: "btn ghost today-btn", id: "btn-today", text: "今日话题", title: "抽取今日话题" }),
           el("div", { class: "settings", id: "settings" },
             el("button", { type: "button", class: "settings-trigger", id: "settings-trigger", "aria-haspopup": "dialog", "aria-expanded": "false", "aria-label": "设置", title: "设置" },
               el("svg", { viewBox: "0 0 24 24", "aria-hidden": "true", focusable: "false" },
@@ -470,18 +532,23 @@ function buildSettings() {
           state.speechSeconds = secs;
           writeSeconds("speech", secs);
           renderSettingsValues();
-        }),
+        }, null, [1, 3, 5, 10]),
         durationField("研究", state.researchSeconds / 60, 1, 60, (mins) => {
           const secs = clampResearch(mins * 60);
           state.researchSeconds = secs;
           writeSeconds("research", secs);
           renderSettingsValues();
-        }, "仅深度研究模式"),
+        }, "仅深度研究模式", [5, 15, 30, 60]),
         el("div", { class: "settings-mute" },
           el("input", { type: "checkbox", id: "settings-mute-input", checked: muted }),
           el("label", { for: "settings-mute-input", text: "静音音效" })
         ),
+        el("div", { class: "settings-mute" },
+          el("input", { type: "checkbox", id: "settings-record-input", checked: recordOn }),
+          el("label", { for: "settings-record-input", text: "演讲时录音(结束后可回放)" })
+        ),
         el("p", { class: "settings-note", text: "设置将保存到下次使用。" }),
+        el("p", { class: "settings-shortcuts", text: "快捷键:R 抽取 · S 开始 · P 暂停/继续 · M 静音 · Esc 关闭" }),
         el("button", { type: "button", class: "btn secondary settings-vocab-btn", id: "settings-vocab-btn", text: "词汇管理" }),
         el("button", { type: "button", class: "btn primary settings-done", id: "settings-done", text: "完成" })
       ),
@@ -489,9 +556,19 @@ function buildSettings() {
         el("div", { class: "vocab-pick" },
           el("label", { class: "vocab-pick-label", for: "vocab-select", text: "选择领域" }),
           el("select", { id: "vocab-select", class: "vocab-select" },
-            MODES.map((m) => el("option", { value: m.id, text: `${m.emoji} ${m.label}` }))
+            [...MODES, ...customModes].map((m) => el("option", { value: m.id, text: `${m.emoji} ${m.label}` }))
           ),
           el("span", { class: "vocab-count", id: "vocab-count" })
+        ),
+        el("div", { class: "vocab-custom-actions" },
+          el("button", { type: "button", class: "btn secondary", id: "vocab-new-niche-btn", text: "＋ 新建领域" }),
+          el("button", { type: "button", class: "btn ghost", id: "vocab-del-niche-btn", text: "删除该领域", hidden: true })
+        ),
+        el("div", { class: "vocab-new-form", id: "vocab-new-form", hidden: true },
+          el("input", { type: "text", id: "vocab-new-name", class: "vocab-new-name", placeholder: "领域名称(如:法律)", maxlength: "20" }),
+          el("input", { type: "text", id: "vocab-new-emoji", class: "vocab-new-emoji", placeholder: "图标(如:⚖️)", maxlength: "4" }),
+          el("button", { type: "button", class: "btn primary", id: "vocab-new-create", text: "创建" }),
+          el("button", { type: "button", class: "btn ghost", id: "vocab-new-cancel", text: "取消" })
         ),
         el("div", { class: "vocab-list", id: "vocab-list" }),
         el("div", { class: "vocab-add" },
@@ -533,7 +610,7 @@ function buildSettings() {
   );
 }
 
-function durationField(label, minutes, min, max, onChange, hint) {
+function durationField(label, minutes, min, max, onChange, hint, presets) {
   const id = `duration-${label}-${min}-${max}`;
   const field = el("div", { class: "duration-field" },
     el("div", { class: "duration-head" },
@@ -567,6 +644,23 @@ function durationField(label, minutes, min, max, onChange, hint) {
   };
   setValue(minutes * 60);
   slider.addEventListener("input", () => onChange(Number(slider.value)));
+  if (presets && presets.length) {
+    const row = el("div", { class: "duration-presets" },
+      ...presets.map((p) =>
+        el("button", {
+          type: "button",
+          class: "duration-preset",
+          onclick: () => {
+            slider.value = String(p);
+            onChange(p);
+            setValue(p * 60);
+          },
+          text: `${p} 分钟`,
+        })
+      )
+    );
+    field.append(row);
+  }
   return field;
 }
 
@@ -601,6 +695,8 @@ function renderTimerOverlay() {
           el("span", { class: "timer-digits", id: "timer-digits" })
         ),
         el("p", { class: "timer-status", id: "timer-status", "aria-live": "polite" }),
+        el("p", { class: "timer-record", id: "timer-record", hidden: true, text: "● 录音中" }),
+        el("p", { class: "timer-guide", id: "timer-guide", hidden: true }),
         el("p", { class: "timer-next", id: "timer-next", hidden: true }),
         el("div", { class: "timer-actions", id: "timer-actions" })
       )
@@ -637,6 +733,12 @@ function renderTimerOverlay() {
       li.classList.toggle("is-pending", i >= hit);
     });
   }
+  const guideEl = document.getElementById("timer-guide");
+  guideEl.hidden = !showStages;
+  if (showStages) {
+    const idx = clamp(stageHitCount() - 1, 0, SPEECH_GUIDES.length - 1);
+    guideEl.textContent = `💡 ${SPEECH_GUIDES[idx]}`;
+  }
 
   // 计时圆环与数字
   const total = research ? state.researchSeconds : state.speechSeconds;
@@ -646,6 +748,8 @@ function renderTimerOverlay() {
 
   // 状态与下一步提示
   document.getElementById("timer-status").textContent = statusText();
+  const recordEl = document.getElementById("timer-record");
+  recordEl.hidden = !(recordOn && state.phase === "speech" && !state.paused && mediaRecorder && mediaRecorder.state === "recording");
   const nextEl = document.getElementById("timer-next");
   nextEl.hidden = !ready;
   if (ready) {
@@ -655,9 +759,13 @@ function renderTimerOverlay() {
   // 操作按钮(仅在 phase 变化时重建,避免打断动画与焦点)
   if (state.phase !== overlayPhase) {
     const actions = document.getElementById("timer-actions");
+    const canPause = state.phase === "research" || state.phase === "speech";
     const buttons = [
       research ? el("button", { type: "button", class: "btn primary", onclick: finishResearchEarly, text: "研究完成" }) : null,
       ready ? el("button", { type: "button", class: "btn primary", onclick: startSpeechFromReady, text: "准备开始演讲" }) : null,
+      canPause ? el("button", { type: "button", class: "btn secondary", id: "btn-pause", onclick: pauseResume, text: state.paused ? "继续" : "暂停" }) : null,
+      done && recordedBlob ? el("button", { type: "button", class: "btn secondary", id: "btn-playback", onclick: togglePlayback, text: "回放录音" }) : null,
+      done ? el("button", { type: "button", class: "btn secondary", id: "btn-share", onclick: shareCard, text: "分享打卡卡" }) : null,
       el("button", { type: "button", class: "btn ghost", onclick: closeTimer, text: "关闭" }),
     ].filter(Boolean);
     actions.replaceChildren(...buttons);
@@ -676,6 +784,7 @@ function stageHitCount() {
 }
 
 function statusText() {
+  if (state.paused) return "已暂停";
   if (researchActive()) return "研究中。";
   if (state.phase === "ready") return "研究完成。";
   if (state.phase === "done") return "时间到。";
@@ -700,7 +809,7 @@ function renderMain() {
   const showNiche = state.mode === "off-the-cuff";
   niche.hidden = !showNiche;
 
-  const nicheMode = modeByNiche(state.niche);
+  const nicheMode = findMode(state.niche);
   document.getElementById("niche-emoji").textContent = nicheMode.emoji;
   document.getElementById("niche-label").textContent = nicheMode.label;
   document.querySelectorAll(".niche-option").forEach((opt) => {
@@ -765,6 +874,141 @@ try {
   showErrorScreen();
 }
 
+/* PWA 离线支持 */
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
+
+/* 今日话题:按日期确定性选取 */
+function todayTopicIndex(poolLen) {
+  const days = Math.floor(Date.now() / 86400000);
+  return ((days % poolLen) + poolLen) % poolLen;
+}
+
+function spinToday() {
+  const pool = currentPool();
+  if (!pool.length) return;
+  spin(todayTopicIndex(pool.length));
+}
+
+/* 轻提示 Toast */
+let toastTimer = null;
+function showToast(text) {
+  let toast = document.getElementById("app-toast");
+  if (!toast) {
+    toast = el("div", { class: "app-toast", id: "app-toast", role: "status" });
+    document.body.appendChild(toast);
+  }
+  toast.textContent = text;
+  toast.classList.add("is-show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("is-show"), 1600);
+}
+
+function toggleMute() {
+  muted = !muted;
+  writeMuted(muted);
+  const cb = document.getElementById("settings-mute-input");
+  if (cb) cb.checked = muted;
+  showToast(muted ? "已静音" : "已开启声音");
+}
+
+/* 打卡分享卡(canvas 生成图片) */
+function wrapTextLines(ctx, text, maxWidth) {
+  const lines = [];
+  let line = "";
+  for (const ch of String(text)) {
+    const test = line + ch;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = ch;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function shareCard() {
+  const topic = state.landed || state.shown || "口语练习";
+  const mode = practiceMode(state.mode).label;
+  const dur = formatDuration(state.speechSeconds);
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+  const W = 1080;
+  const H = 1350;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#121816";
+  ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(W / 2, H * 0.2, 0, W / 2, H * 0.2, H * 0.7);
+  g.addColorStop(0, "rgba(196,122,74,.38)");
+  g.addColorStop(0.6, "rgba(46,107,94,.22)");
+  g.addColorStop(1, "rgba(18,24,22,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#c47a4a";
+  ctx.font = "600 58px Georgia, 'Songti SC', serif";
+  ctx.fillText("Unprompted", W / 2, 170);
+  ctx.fillStyle = "rgba(244,232,214,.75)";
+  ctx.font = "400 34px 'PingFang SC', sans-serif";
+  ctx.fillText("口语练习 · 打卡", W / 2, 240);
+  ctx.fillStyle = "rgba(244,232,214,.55)";
+  ctx.font = "400 30px 'PingFang SC', sans-serif";
+  ctx.fillText(dateStr, W / 2, 300);
+
+  ctx.fillStyle = "rgba(196,122,74,.18)";
+  const pillW = 320;
+  const pillH = 64;
+  ctx.beginPath();
+  ctx.roundRect(W / 2 - pillW / 2, 360, pillW, pillH, pillH / 2);
+  ctx.fill();
+  ctx.fillStyle = "#e0925c";
+  ctx.font = "500 32px 'PingFang SC', sans-serif";
+  ctx.fillText(mode, W / 2, 402);
+
+  ctx.fillStyle = "#f4e8d6";
+  ctx.font = "700 96px Georgia, 'Songti SC', serif";
+  const lines = wrapTextLines(ctx, topic, W - 200);
+  const lineH = 120;
+  const startY = 620 - ((lines.length - 1) * lineH) / 2;
+  lines.forEach((l, i) => ctx.fillText(l, W / 2, startY + i * lineH));
+
+  ctx.fillStyle = "rgba(244,232,214,.8)";
+  ctx.font = "400 40px 'PingFang SC', sans-serif";
+  ctx.fillText(`演讲 ${dur}`, W / 2, H - 220);
+
+  ctx.fillStyle = "rgba(244,232,214,.45)";
+  ctx.font = "400 28px 'PingFang SC', sans-serif";
+  ctx.fillText("由 Unprompted 生成", W / 2, H - 140);
+
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "unprompted-打卡卡.png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      flashButton("btn-share", "已保存并复制 ✓");
+    } catch {
+      flashButton("btn-share", "已保存 ✓");
+    }
+  }, "image/png");
+}
+
 /* ------------------------- 交互:转盘 ------------------------- */
 
 function pickTopic(pool) {
@@ -806,7 +1050,7 @@ function showEmptyNotice() {
   emptyNoticeTimer = setTimeout(() => renderMain(), 1600);
 }
 
-function spin() {
+function spin(forcedIndex = null) {
   if (state.spinning || timerActive()) return;
   const pool = currentPool();
   if (!pool.length) {
@@ -821,7 +1065,12 @@ function spin() {
 
   const len = pool.length;
   const startIdx = currentIndex % len;
-  const { totalSteps, landIndex } = spinPlan(startIdx, len);
+  let { totalSteps, landIndex } = spinPlan(startIdx, len);
+  if (forcedIndex !== null && forcedIndex !== undefined && Number.isFinite(forcedIndex)) {
+    landIndex = ((forcedIndex % len) + len) % len;
+    let steps = ((landIndex - startIdx) % len + len) % len;
+    totalSteps = steps + len * (3 + Math.floor(Math.random() * 3));
+  }
   const t0 = performance.now();
   let lastStep = -1;
   let finished = false;
@@ -890,7 +1139,7 @@ const nicheSelect = document.getElementById("niche-select");
 const nicheTrigger = document.getElementById("niche-trigger");
 const nicheMenu = document.getElementById("niche-menu");
 let nicheOpen = false;
-let nicheActiveIdx = Math.max(0, NICHE_MODES.findIndex((m) => m.id === state.niche));
+let nicheActiveIdx = Math.max(0, getNicheModes().findIndex((m) => m.id === state.niche));
 
 function setNicheOpen(open) {
   nicheOpen = open;
@@ -904,21 +1153,21 @@ function setNicheOpen(open) {
 }
 
 function selectNiche(index) {
-  state.niche = NICHE_MODES[index].id;
-  pickTopic(modeByNiche(state.niche).topics);
+  state.niche = getNicheModes()[index].id;
+  pickTopic(findMode(state.niche).topics);
   setNicheOpen(false);
   nicheTrigger.focus();
 }
 
 nicheTrigger.addEventListener("click", () => {
-  nicheActiveIdx = Math.max(0, NICHE_MODES.findIndex((m) => m.id === state.niche));
+  nicheActiveIdx = Math.max(0, getNicheModes().findIndex((m) => m.id === state.niche));
   setNicheOpen(!nicheOpen);
 });
 
 nicheTrigger.addEventListener("keydown", (e) => {
   if ((e.key === "ArrowDown" || e.key === "ArrowUp") && !nicheOpen) {
     e.preventDefault();
-    nicheActiveIdx = Math.max(0, NICHE_MODES.findIndex((m) => m.id === state.niche));
+    nicheActiveIdx = Math.max(0, getNicheModes().findIndex((m) => m.id === state.niche));
     setNicheOpen(true);
   }
 });
@@ -931,12 +1180,12 @@ nicheMenu.addEventListener("keydown", (e) => {
   switch (e.key) {
     case "ArrowDown":
       e.preventDefault();
-      nicheActiveIdx = (nicheActiveIdx + 1) % NICHE_MODES.length;
+      nicheActiveIdx = (nicheActiveIdx + 1) % getNicheModes().length;
       document.querySelectorAll(".niche-option")[nicheActiveIdx]?.focus();
       break;
     case "ArrowUp":
       e.preventDefault();
-      nicheActiveIdx = (nicheActiveIdx - 1 + NICHE_MODES.length) % NICHE_MODES.length;
+      nicheActiveIdx = (nicheActiveIdx - 1 + getNicheModes().length) % getNicheModes().length;
       document.querySelectorAll(".niche-option")[nicheActiveIdx]?.focus();
       break;
     case "Home":
@@ -946,8 +1195,8 @@ nicheMenu.addEventListener("keydown", (e) => {
       break;
     case "End":
       e.preventDefault();
-      nicheActiveIdx = NICHE_MODES.length - 1;
-      document.querySelectorAll(".niche-option")[NICHE_MODES.length - 1]?.focus();
+      nicheActiveIdx = getNicheModes().length - 1;
+      document.querySelectorAll(".niche-option")[getNicheModes().length - 1]?.focus();
       break;
     case "Enter":
     case " ":
@@ -969,6 +1218,69 @@ document.querySelectorAll(".niche-option").forEach((opt) => {
   opt.addEventListener("click", () => selectNiche(Number(opt.dataset.index)));
 });
 
+/* 录音:演讲时录制,结束后可回放 */
+async function startRecording() {
+  if (!recordOn || mediaRecorder || state.phase !== "speech") return;
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(mediaStream);
+    recordedChunks = [];
+    recordedBlob = null;
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data && e.data.size) recordedChunks.push(e.data);
+    };
+    mediaRecorder.onstop = () => {
+      try {
+        recordedBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+      } catch {}
+      mediaStream?.getTracks().forEach((t) => t.stop());
+      mediaStream = null;
+      mediaRecorder = null;
+      overlayPhase = null; // 强制重建操作按钮,让「回放录音」出现
+      renderTimerOverlay();
+    };
+    mediaRecorder.start();
+    renderTimerOverlay();
+  } catch {
+    mediaRecorder = null;
+    mediaStream = null;
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+  } else if (mediaStream) {
+    mediaStream.getTracks().forEach((t) => t.stop());
+    mediaStream = null;
+  }
+}
+
+function pauseRecording() {
+  if (mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.pause();
+}
+
+function resumeRecording() {
+  if (mediaRecorder && mediaRecorder.state === "paused") mediaRecorder.resume();
+}
+
+function togglePlayback() {
+  if (!recordedBlob) return;
+  if (recordAudio && !recordAudio.paused) {
+    recordAudio.pause();
+    recordAudio.currentTime = 0;
+    flashButton("btn-playback", "回放录音");
+    return;
+  }
+  if (recordAudioUrl) URL.revokeObjectURL(recordAudioUrl);
+  recordAudioUrl = URL.createObjectURL(recordedBlob);
+  if (recordAudio) recordAudio.pause();
+  recordAudio = new Audio(recordAudioUrl);
+  recordAudio.play().catch(() => {});
+  recordAudio.onended = () => flashButton("btn-playback", "回放录音");
+  flashButton("btn-playback", "回放中…");
+}
+
 /* ------------------------- 交互:计时器 ------------------------- */
 
 function stopCountdown() {
@@ -976,8 +1288,12 @@ function stopCountdown() {
   countdownTimer = null;
 }
 
+let countdownDone = null;
+
 function runCountdown(seconds, onDone) {
   stopCountdown();
+  state.paused = false;
+  countdownDone = onDone;
   state.remaining = seconds;
   const end = Date.now() + seconds * 1000;
   renderTimerOverlay();
@@ -995,8 +1311,10 @@ function runCountdown(seconds, onDone) {
 
 function startSpeech() {
   state.phase = "speech";
+  if (recordOn) startRecording();
   runCountdown(state.speechSeconds, () => {
     state.phase = "done";
+    stopRecording();
     renderTimerOverlay();
     playDoneChime();
   });
@@ -1032,6 +1350,13 @@ function startSpeechFromReady() {
 
 function closeTimer() {
   stopCountdown();
+  stopRecording();
+  if (recordAudio) recordAudio.pause();
+  if (recordAudioUrl) URL.revokeObjectURL(recordAudioUrl);
+  recordAudio = null;
+  recordAudioUrl = null;
+  recordedBlob = null;
+  state.paused = false;
   state.phase = "idle";
   state.remaining = state.speechSeconds;
   renderTimerOverlay();
@@ -1039,11 +1364,52 @@ function closeTimer() {
   if (lastFocusedBeforeTimer) lastFocusedBeforeTimer.focus();
 }
 
-document.getElementById("btn-spin").addEventListener("click", spin);
+/* 暂停 / 继续 */
+function pauseResume() {
+  if (!timerActive() || state.phase === "ready" || state.phase === "done") return;
+  if (state.paused) {
+    state.paused = false;
+    resumeRecording();
+    runCountdown(state.remaining, countdownDone || (() => {}));
+  } else {
+    state.paused = true;
+    pauseRecording();
+    stopCountdown();
+    renderTimerOverlay();
+  }
+  const pb = document.getElementById("btn-pause");
+  if (pb) pb.textContent = state.paused ? "继续" : "暂停";
+}
+
+document.getElementById("btn-spin").addEventListener("click", () => spin());
 document.getElementById("btn-start").addEventListener("click", beginFromIdle);
 
 document.addEventListener("keydown", (e) => {
   if (timerActive() && e.key === "Escape") closeTimer();
+});
+
+document.getElementById("btn-today").addEventListener("click", spinToday);
+
+/* 键盘快捷键 */
+document.addEventListener("keydown", (e) => {
+  const t = e.target;
+  const typing = t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable);
+  if (typing || state.settingsOpen || document.querySelector(".confirm-overlay")) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === "r") {
+    e.preventDefault();
+    spin();
+  } else if (k === "s") {
+    e.preventDefault();
+    beginFromIdle();
+  } else if (k === "p") {
+    e.preventDefault();
+    pauseResume();
+  } else if (k === "m") {
+    e.preventDefault();
+    toggleMute();
+  }
 });
 
 /* ------------------------- 交互:设置 ------------------------- */
@@ -1077,6 +1443,11 @@ settingsOverlay.addEventListener("mousedown", (e) => {
 document.getElementById("settings-mute-input").addEventListener("change", (e) => {
   muted = e.target.checked;
   writeMuted(muted);
+});
+
+document.getElementById("settings-record-input").addEventListener("change", (e) => {
+  recordOn = e.target.checked;
+  writeRecord(recordOn);
 });
 
 document.getElementById("settings-done").addEventListener("click", () => setSettingsOpen(false));
@@ -1179,6 +1550,7 @@ function renderVocab() {
   );
   document.getElementById("vocab-count").textContent = `${topics.length} 个词汇`;
   document.getElementById("vocab-select").value = vocabMode;
+  document.getElementById("vocab-del-niche-btn").hidden = !vocabMode.startsWith("custom-");
   renderLlmPrompt();
 }
 
@@ -1235,7 +1607,7 @@ function importWords() {
 }
 
 function restoreTopics() {
-  const mode = MODES.find((m) => m.id === vocabMode) ?? MODES[0];
+  const mode = findMode(vocabMode);
   const current = loadTopics(vocabMode);
   confirmDialog({
     title: "恢复默认词汇?",
@@ -1252,7 +1624,7 @@ function restoreTopics() {
 
 /* LLM 生成词汇提示词 */
 function buildLlmPrompt() {
-  const mode = MODES.find((m) => m.id === vocabMode) ?? MODES[0];
+  const mode = findMode(vocabMode);
   const existing = loadTopics(vocabMode);
   const count = clamp(parseInt(document.getElementById("vocab-llm-count").value, 10) || 20, 1, 50);
   const hint = document.getElementById("vocab-llm-hint").value.trim();
@@ -1303,7 +1675,7 @@ async function copyLlmPrompt() {
 /* 词汇备份:导出 / 导入 JSON */
 function exportTopics() {
   const data = { version: 1, exportedAt: new Date().toISOString(), topics: {} };
-  for (const m of MODES) {
+  for (const m of [...MODES, ...customModes]) {
     data.topics[m.id] = loadTopics(m.id);
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -1327,8 +1699,9 @@ function importTopicsFile(file) {
       if (!data || typeof data.topics !== "object") throw new Error("bad format");
       let imported = 0;
       let modes = 0;
+      const known = [...MODES, ...customModes].map((m) => m.id);
       for (const [id, list] of Object.entries(data.topics)) {
-        if (!MODES.some((m) => m.id === id) || !Array.isArray(list)) continue;
+        if (!known.includes(id) || !Array.isArray(list)) continue;
         const clean = list.map((t) => String(t).trim()).filter(Boolean);
         if (!clean.length) continue;
         saveTopics(id, clean);
@@ -1356,6 +1729,86 @@ function importTopicsFile(file) {
   reader.readAsText(file);
 }
 
+/* 自定义领域:重建选项 */
+function rebuildNicheOptions() {
+  const menu = document.getElementById("niche-menu");
+  const modes = getNicheModes();
+  menu.replaceChildren(
+    ...modes.map((m, i) =>
+      el("div", {
+        class: "niche-option",
+        role: "option",
+        "aria-selected": String(m.id === state.niche),
+        tabindex: "-1",
+        "data-niche": m.id,
+        "data-index": String(i),
+      },
+        el("span", { class: "niche-emoji", "aria-hidden": "true", text: m.emoji }),
+        el("span", { class: "niche-label", text: m.label })
+      )
+    )
+  );
+  menu.querySelectorAll(".niche-option").forEach((opt) => {
+    opt.addEventListener("click", () => selectNiche(Number(opt.dataset.index)));
+  });
+}
+
+function rebuildVocabSelect() {
+  const sel = document.getElementById("vocab-select");
+  sel.replaceChildren(
+    ...[...MODES, ...customModes].map((m) => el("option", { value: m.id, text: `${m.emoji} ${m.label}` }))
+  );
+}
+
+function createCustomNiche() {
+  const nameEl = document.getElementById("vocab-new-name");
+  const emojiEl = document.getElementById("vocab-new-emoji");
+  const name = nameEl.value.trim();
+  if (!name) {
+    flashButton("vocab-new-create", "请输入名称");
+    return;
+  }
+  const emoji = (emojiEl.value.trim() || "📌").slice(0, 4);
+  const mode = { id: "custom-" + Date.now().toString(36), label: name.slice(0, 20), emoji, topics: [] };
+  customModes.push(mode);
+  saveCustomModes();
+  rebuildNicheOptions();
+  rebuildVocabSelect();
+  vocabMode = mode.id;
+  nameEl.value = "";
+  emojiEl.value = "";
+  document.getElementById("vocab-new-form").hidden = true;
+  document.getElementById("vocab-new-niche-btn").hidden = false;
+  renderVocab();
+  flashButton("vocab-add-btn", "已创建,添加词汇");
+  document.getElementById("vocab-input").focus();
+}
+
+function deleteCustomNiche() {
+  const mode = findMode(vocabMode);
+  confirmDialog({
+    title: "删除该领域?",
+    body: `将永久删除领域「${mode.label}」及其全部词汇,此操作不可撤销。`,
+    confirmText: "删除",
+    onConfirm: () => {
+      customModes = customModes.filter((m) => m.id !== vocabMode);
+      saveCustomModes();
+      try {
+        window.localStorage.removeItem(TOPICS_PREFIX + vocabMode);
+      } catch {}
+      if (state.niche === vocabMode) {
+        state.niche = "general";
+        pickTopic(loadTopics("general"));
+      }
+      vocabMode = "general";
+      rebuildNicheOptions();
+      rebuildVocabSelect();
+      renderVocab();
+      renderMain();
+    },
+  });
+}
+
 document.getElementById("settings-vocab-btn").addEventListener("click", () => setSettingsView("vocab"));
 document.getElementById("vocab-back").addEventListener("click", () => setSettingsView("settings"));
 document.getElementById("vocab-select").addEventListener("change", (e) => {
@@ -1375,6 +1828,23 @@ document.getElementById("vocab-llm-refresh").addEventListener("click", renderLlm
 document.getElementById("vocab-llm-copy").addEventListener("click", copyLlmPrompt);
 document.getElementById("vocab-llm-count").addEventListener("change", renderLlmPrompt);
 document.getElementById("vocab-llm-hint").addEventListener("change", renderLlmPrompt);
+document.getElementById("vocab-new-niche-btn").addEventListener("click", () => {
+  document.getElementById("vocab-new-form").hidden = false;
+  document.getElementById("vocab-new-niche-btn").hidden = true;
+  document.getElementById("vocab-new-name").focus();
+});
+document.getElementById("vocab-new-cancel").addEventListener("click", () => {
+  document.getElementById("vocab-new-form").hidden = true;
+  document.getElementById("vocab-new-niche-btn").hidden = false;
+});
+document.getElementById("vocab-new-create").addEventListener("click", createCustomNiche);
+document.getElementById("vocab-new-name").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    createCustomNiche();
+  }
+});
+document.getElementById("vocab-del-niche-btn").addEventListener("click", deleteCustomNiche);
 document.getElementById("vocab-export-btn").addEventListener("click", exportTopics);
 document.getElementById("vocab-import-file-btn").addEventListener("click", () => document.getElementById("vocab-file-input").click());
 document.getElementById("vocab-file-input").addEventListener("change", (e) => {
