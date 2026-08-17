@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>研究笔记 — Unprompted</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="research.css" />
+  </head>
+  <body>
+    <div class="research-page">
+      <header class="research-head">
+        <div class="research-head-left">
+          <p class="research-title">研究笔记</p>
+          <p class="research-sub">内容自动保存在本地浏览器</p>
+        </div>
+        <div class="research-tabs" role="tablist" aria-label="笔记类型">
+          <button type="button" id="tab-text" class="research-tab is-active" role="tab" aria-selected="true">文本</button>
+          <button type="button" id="tab-board" class="research-tab" role="tab" aria-selected="false">画板</button>
+        </div>
+      </header>
+
+      <section id="panel-text" class="research-panel">
+        <textarea id="notes-text" class="notes-text" placeholder="在这里记录研究要点、想法、引用…"></textarea>
+        <div class="research-actions">
+          <button type="button" class="btn secondary" id="btn-dl-text">下载文本(.txt)</button>
+        </div>
+      </section>
+
+      <section id="panel-board" class="research-panel" hidden>
+        <div class="board-toolbar">
+          <button type="button" class="btn secondary" id="btn-add-text">＋ 文本框</button>
+          <button type="button" class="btn ghost" id="btn-clear-board">清空画板</button>
+          <span class="board-hint">双击画布加文字 · 拖拽移动 · 拖节点右侧圆点连线 · 粘贴图片/文本 · Del 删除</span>
+        </div>
+        <div class="board" id="board" tabindex="0">
+          <svg class="board-links" id="board-links"></svg>
+          <div class="board-items" id="board-items"></div>
+        </div>
+        <div class="research-actions">
+          <button type="button" class="btn primary" id="btn-dl-pdf">导出画板(矢量 PDF)</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="vendor/pdf-lib.min.js"></script>
+    <script src="vendor/fontkit.umd.min.js"></script>
+    <script src="research.js"></script>
+  </body>
+</html>

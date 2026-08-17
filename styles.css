@@ -1513,6 +1513,24 @@ body {
   transform: translateY(0);
 }
 
+.attribution {
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: .76rem;
+  text-align: center;
+  margin-top: 2.5rem;
+  opacity: .75;
+}
+
+.attribution a {
+  color: var(--accent-bright);
+  text-decoration: none;
+}
+
+.attribution a:hover {
+  text-decoration: underline;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .brand, .stage, .reel.is-landed .reel-phrase, .reel.is-spinning .reel-phrase, .timer-overlay, .timer-overlay-inner, .settings-overlay, .settings-panel, .niche-menu {
     animation: none !important;

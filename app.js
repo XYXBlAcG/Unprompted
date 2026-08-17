@@ -222,6 +222,22 @@ function writeRecord(v) {
   } catch {}
 }
 
+function readResearchWorkspace() {
+  try {
+    const raw = window.localStorage.getItem(LS_PREFIX + "research-workspace");
+    if (raw === null) return true;
+    return raw === "true";
+  } catch {
+    return true;
+  }
+}
+
+function writeResearchWorkspace(v) {
+  try {
+    window.localStorage.setItem(LS_PREFIX + "research-workspace", String(v));
+  } catch {}
+}
+
 /* 自定义领域(存储在 localStorage,合并进领域列表) */
 function loadCustomModes() {
   try {
@@ -295,6 +311,8 @@ function hasCustomTopics(modeId) {
 let audioCtx = null;
 let muted = readMuted();
 let recordOn = readRecord();
+let researchWorkspace = readResearchWorkspace();
+let researchWin = null;
 let mediaRecorder = null;
 let mediaStream = null;
 let recordedChunks = [];
@@ -503,7 +521,6 @@ function build() {
             el("button", { type: "button", class: "btn primary", id: "btn-spin", text: "抽取" }),
             el("button", { type: "button", class: "btn secondary", id: "btn-start", disabled: true })
           ),
-          el("button", { type: "button", class: "btn ghost today-btn", id: "btn-today", text: "今日话题", title: "抽取今日话题" }),
           el("div", { class: "settings", id: "settings" },
             el("button", { type: "button", class: "settings-trigger", id: "settings-trigger", "aria-haspopup": "dialog", "aria-expanded": "false", "aria-label": "设置", title: "设置" },
               el("svg", { viewBox: "0 0 24 24", "aria-hidden": "true", focusable: "false" },
@@ -513,6 +530,10 @@ function build() {
             )
           )
         )
+      ),
+      el("footer", { class: "attribution" },
+        "灵感来源:",
+        el("a", { href: "https://www.unprompted.cool/", target: "_blank", rel: "noopener noreferrer", text: "unprompted.cool" })
       )
     )
   );
@@ -546,6 +567,10 @@ function buildSettings() {
         el("div", { class: "settings-mute" },
           el("input", { type: "checkbox", id: "settings-record-input", checked: recordOn }),
           el("label", { for: "settings-record-input", text: "演讲时录音(结束后可回放)" })
+        ),
+        el("div", { class: "settings-mute" },
+          el("input", { type: "checkbox", id: "settings-research-input", checked: researchWorkspace }),
+          el("label", { for: "settings-research-input", text: "研究时打开笔记画板" })
         ),
         el("p", { class: "settings-note", text: "设置将保存到下次使用。" }),
         el("p", { class: "settings-shortcuts", text: "快捷键:R 抽取 · S 开始 · P 暂停/继续 · M 静音 · Esc 关闭" }),
@@ -762,10 +787,11 @@ function renderTimerOverlay() {
     const canPause = state.phase === "research" || state.phase === "speech";
     const buttons = [
       research ? el("button", { type: "button", class: "btn primary", onclick: finishResearchEarly, text: "研究完成" }) : null,
+      research ? el("button", { type: "button", class: "btn secondary", onclick: openResearchWindow, text: "笔记" }) : null,
       ready ? el("button", { type: "button", class: "btn primary", onclick: startSpeechFromReady, text: "准备开始演讲" }) : null,
       canPause ? el("button", { type: "button", class: "btn secondary", id: "btn-pause", onclick: pauseResume, text: state.paused ? "继续" : "暂停" }) : null,
       done && recordedBlob ? el("button", { type: "button", class: "btn secondary", id: "btn-playback", onclick: togglePlayback, text: "回放录音" }) : null,
-      done ? el("button", { type: "button", class: "btn secondary", id: "btn-share", onclick: shareCard, text: "分享打卡卡" }) : null,
+      done ? el("button", { type: "button", class: "btn secondary", id: "btn-share", onclick: shareCard, text: "打卡图片" }) : null,
       el("button", { type: "button", class: "btn ghost", onclick: closeTimer, text: "关闭" }),
     ].filter(Boolean);
     actions.replaceChildren(...buttons);
@@ -881,18 +907,6 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
   });
 }
 
-/* 今日话题:按日期确定性选取 */
-function todayTopicIndex(poolLen) {
-  const days = Math.floor(Date.now() / 86400000);
-  return ((days % poolLen) + poolLen) % poolLen;
-}
-
-function spinToday() {
-  const pool = currentPool();
-  if (!pool.length) return;
-  spin(todayTopicIndex(pool.length));
-}
-
 /* 轻提示 Toast */
 let toastTimer = null;
 function showToast(text) {
@@ -976,26 +990,55 @@ function shareCard() {
   ctx.fillText(mode, W / 2, 402);
 
   ctx.fillStyle = "#f4e8d6";
-  ctx.font = "700 96px Georgia, 'Songti SC', serif";
+  ctx.font = "700 92px Georgia, 'Songti SC', serif";
   const lines = wrapTextLines(ctx, topic, W - 200);
-  const lineH = 120;
-  const startY = 620 - ((lines.length - 1) * lineH) / 2;
+  const lineH = 116;
+  const startY = 560 - ((lines.length - 1) * lineH) / 2;
   lines.forEach((l, i) => ctx.fillText(l, W / 2, startY + i * lineH));
 
   ctx.fillStyle = "rgba(244,232,214,.8)";
-  ctx.font = "400 40px 'PingFang SC', sans-serif";
-  ctx.fillText(`演讲 ${dur}`, W / 2, H - 220);
+  ctx.font = "400 38px 'PingFang SC', sans-serif";
+  ctx.fillText(`演讲 ${dur}`, W / 2, 820);
+
+  // 二维码(本页链接)
+  const qrSize = 240;
+  let qr = null;
+  try {
+    qr = window.qrcode(0, "M");
+    qr.addData(location.href);
+    qr.make();
+  } catch {}
+  const qrX = (W - qrSize) / 2;
+  const qrY = 930;
+  if (qr) {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(qrX - 14, qrY - 14, qrSize + 28, qrSize + 28);
+    const cell = qrSize / qr.getModuleCount();
+    ctx.fillStyle = "#121816";
+    for (let r = 0; r < qr.getModuleCount(); r++) {
+      for (let c = 0; c < qr.getModuleCount(); c++) {
+        if (qr.isDark(r, c)) ctx.fillRect(qrX + c * cell, qrY + r * cell, Math.ceil(cell), Math.ceil(cell));
+      }
+    }
+    ctx.fillStyle = "rgba(244,232,214,.55)";
+    ctx.font = "400 28px 'PingFang SC', sans-serif";
+    ctx.fillText("扫码打开本页", W / 2, qrY + qrSize + 46);
+  } else {
+    ctx.fillStyle = "rgba(244,232,214,.55)";
+    ctx.font = "400 26px 'PingFang SC', sans-serif";
+    ctx.fillText(location.href, W / 2, qrY + qrSize / 2);
+  }
 
   ctx.fillStyle = "rgba(244,232,214,.45)";
   ctx.font = "400 28px 'PingFang SC', sans-serif";
-  ctx.fillText("由 Unprompted 生成", W / 2, H - 140);
+  ctx.fillText("由 Unprompted 生成", W / 2, H - 90);
 
   canvas.toBlob(async (blob) => {
     if (!blob) return;
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "unprompted-打卡卡.png";
+    a.download = "unprompted-打卡图片.png";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1050,7 +1093,7 @@ function showEmptyNotice() {
   emptyNoticeTimer = setTimeout(() => renderMain(), 1600);
 }
 
-function spin(forcedIndex = null) {
+function spin() {
   if (state.spinning || timerActive()) return;
   const pool = currentPool();
   if (!pool.length) {
@@ -1065,12 +1108,7 @@ function spin(forcedIndex = null) {
 
   const len = pool.length;
   const startIdx = currentIndex % len;
-  let { totalSteps, landIndex } = spinPlan(startIdx, len);
-  if (forcedIndex !== null && forcedIndex !== undefined && Number.isFinite(forcedIndex)) {
-    landIndex = ((forcedIndex % len) + len) % len;
-    let steps = ((landIndex - startIdx) % len + len) % len;
-    totalSteps = steps + len * (3 + Math.floor(Math.random() * 3));
-  }
+  const { totalSteps, landIndex } = spinPlan(startIdx, len);
   const t0 = performance.now();
   let lastStep = -1;
   let finished = false;
@@ -1281,6 +1319,16 @@ function togglePlayback() {
   flashButton("btn-playback", "回放中…");
 }
 
+/* 研究笔记工作台(独立窗口) */
+function openResearchWindow() {
+  if (researchWin && !researchWin.closed) {
+    researchWin.focus();
+    return;
+  }
+  researchWin = window.open("./research.html", "unprompted_research", "width=980,height=760");
+  if (!researchWin) showToast("请允许弹出窗口以打开研究笔记");
+}
+
 /* ------------------------- 交互:计时器 ------------------------- */
 
 function stopCountdown() {
@@ -1325,6 +1373,7 @@ function beginFromIdle() {
   unlockAudio();
   if (state.mode === "deep-research") {
     state.phase = "research";
+    if (researchWorkspace) openResearchWindow();
     runCountdown(state.researchSeconds, () => {
       state.phase = "ready";
       state.remaining = state.speechSeconds;
@@ -1388,8 +1437,6 @@ document.addEventListener("keydown", (e) => {
   if (timerActive() && e.key === "Escape") closeTimer();
 });
 
-document.getElementById("btn-today").addEventListener("click", spinToday);
-
 /* 键盘快捷键 */
 document.addEventListener("keydown", (e) => {
   const t = e.target;
@@ -1448,6 +1495,11 @@ document.getElementById("settings-mute-input").addEventListener("change", (e) =>
 document.getElementById("settings-record-input").addEventListener("change", (e) => {
   recordOn = e.target.checked;
   writeRecord(recordOn);
+});
+
+document.getElementById("settings-research-input").addEventListener("change", (e) => {
+  researchWorkspace = e.target.checked;
+  writeResearchWorkspace(researchWorkspace);
 });
 
 document.getElementById("settings-done").addEventListener("click", () => setSettingsOpen(false));

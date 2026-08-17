@@ -1,5 +1,5 @@
 /* Unprompted — Service Worker(离线缓存,版本更新时请递增 CACHE_NAME) */
-const CACHE_NAME = "unprompted-v1";
+const CACHE_NAME = "unprompted-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,13 @@ const ASSETS = [
   "./apple-touch-icon.png",
   "./manifest.webmanifest",
   "./og.png",
+  "./research.html",
+  "./research.js",
+  "./research.css",
+  "./vendor/pdf-lib.min.js",
+  "./vendor/fontkit.umd.min.js",
+  "./vendor/qrcode.js",
+  "./assets/cjk-font.ttf",
 ];
 
 self.addEventListener("install", (event) => {
